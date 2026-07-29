@@ -20,11 +20,17 @@ jobs:
       - name: inventory halts on empty drop
         run: |
           python skill/content-foundry/scripts/inventory.py tests/fixtures/drop-empty --quiet && exit 1 || echo "correctly halted"
+      - name: demo guard blocks fixtures without the flag
+        run: |
+          python skill/content-foundry/scripts/composite.py \
+            --base tests/fixtures/drop-messy/photo.jpg \
+            --agent tests/fixtures/agent-testbrand --channel ig \
+            --headline "Guard Test" --out /tmp/cf-guard.jpg && exit 1 || echo "guard correctly blocked"
       - name: composite + lint PASS on fixture
         run: |
           python skill/content-foundry/scripts/composite.py \
             --base tests/fixtures/drop-messy/photo.jpg \
-            --agent tests/fixtures/agent-testbrand --channel ig --treatment panel \
+            --agent tests/fixtures/agent-testbrand --channel ig --treatment panel --allow-demo \
             --headline "CI Smoke Test" --out /tmp/cf-ci.jpg
           python skill/content-foundry/scripts/brand_lint.py /tmp/cf-ci.jpg \
             --agent tests/fixtures/agent-testbrand
