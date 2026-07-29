@@ -1,0 +1,24 @@
+Content Foundry — third-party components
+
+- scroll-world scrub engine (skill/content-foundry/engines/scroll-tour/vendor/)
+  Copyright oso95 contributors. MIT License — see vendor/LICENSE.
+  https://github.com/oso95/scroll-world
+
+- Pretext text-layout engine (@chenglou/pretext, npm dependency of the Remotion engine)
+  Copyright Cheng Lou. MIT License. https://www.pretext.cool/
+
+- Playfair Display (skill/content-foundry/assets/fonts/PlayfairDisplay.ttf)
+  Copyright the Playfair Display Project Authors. SIL Open Font License 1.1 —
+  see assets/fonts/PlayfairDisplay-OFL.txt.
+
+- Source Sans 3 (skill/content-foundry/assets/fonts/SourceSans3.ttf)
+  Copyright Adobe. SIL Open Font License 1.1 — see assets/fonts/SourceSans3-OFL.txt.
+
+- Remotion (npm dependency): Remotion license — free for individuals and small
+  teams; larger companies need a company license. See remotion.dev/license.
+  It is installed by the user (`npm install`), not redistributed here.
+
+Demo media notice: every image in demo/drop-lakehouse/ depicts a FICTIONAL
+property and was AI-generated for demonstration. The pipeline's own rules
+forbid generating imagery of real listings. Riley Shore and Shore & Co. Realty
+are fictional.

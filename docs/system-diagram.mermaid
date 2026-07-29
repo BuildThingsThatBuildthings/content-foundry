@@ -1,0 +1,75 @@
+%% Content Foundry — System Diagram (rev 2, 2026-07-28)
+%% Changes from rev 1: foundation layer is the imported agent Context Kit (tenancy unit);
+%% Pretext removed from the engine subgraph (it is a layout primitive inside stills/composite);
+%% new deterministic COMPOSITE stage between generation and QC.
+flowchart TD
+    subgraph FOUNDATION["🏛️ FOUNDATION LAYER — agents/agent-slug/ (one folder per agent = tenancy unit)"]
+        MAN["_MANIFEST.md<br/>(load order,<br/>Tier 1 overrides Tier 2)"]
+        T1["TIER 1 — imported Context Kit<br/>about-me.md · brand-voice.md<br/>working-style.md"]
+        T2["TIER 2 — added by Content Foundry<br/>brand-context-visual.md (hexes, logo, fonts)<br/>brand-context-compliance.md (license, disclosure)"]
+        CS["channel-specs.md<br/>(dims, safe zones, durations,<br/>formats, caption limits)"]
+        WF["SKILL.md<br/>(workflow + routing +<br/>tenancy selection)"]
+        PL["prompt-library.md<br/>(8 realtor jobs-to-be-done)"]
+    end
+
+    subgraph INPUT["📥 INPUT LAYER"]
+        DROP["drop folder<br/>(audio, video, images,<br/>text, links, PDFs)"]
+        PROMPT["User prompt<br/>(library pick OR freehand)"]
+    end
+
+    subgraph PIPELINE["⚙️ PIPELINE (the skill's runtime loop)"]
+        INGEST["1. INGEST<br/>scripts/inventory.py<br/>→ asset-manifest.json"]
+        UNIFY["2. UNIFY<br/>transcribe A/V, extract PDF,<br/>fetch links, describe images"]
+        RESEARCH["3. RESEARCH<br/>web search: market data,<br/>trends, local context"]
+        BRIEF["4. BRIEF ✋ user checkpoint<br/>written to disk BEFORE<br/>any generation spend"]
+        ROUTE{"5. ROUTE<br/>by output type"}
+        COMPOSITE["7. COMPOSITE ⚙️ deterministic<br/>scripts/composite.py<br/>logo bytes · brand hexes ·<br/>Pretext type layout ·<br/>license + disclosure"]
+        QC["8. QC GATE<br/>brand_lint.py (composite verify<br/>+ palette ΔE) AND<br/>slop_check.py + model QC"]
+        EXPORT["9. EXPORT<br/>scripts/export.py<br/>channel-sized + named"]
+    end
+
+    subgraph ENGINES["🎬 6. GENERATION ENGINES"]
+        IMG["Still images<br/>(hosted image API:<br/>Higgsfield / GPT Image 2 / Gemini)<br/>base imagery ONLY"]
+        REM["Remotion<br/>(programmatic video:<br/>data, text, motion graphics)"]
+        HF["HyperFrames<br/>(AI video scenes)"]
+        W3D["3D world builders<br/>(three.js tours) — post-v1"]
+    end
+
+    subgraph AUTO["🚀 BONUS: AUTOMATION LAYER"]
+        PB["Post Bridge<br/>(npx postbridge-cli)<br/>draft-first scheduling"]
+        SCALE["Scale-out<br/>batch: 1 drop → N channels × M posts<br/>roster: 1 prompt → N agent folders"]
+    end
+
+    MAN --> T1
+    MAN --> T2
+    T1 --> BRIEF
+    T2 --> BRIEF
+    T2 -.brand truth.-> COMPOSITE
+    CS --> BRIEF
+    CS -.safe zones.-> COMPOSITE
+    PL --> PROMPT
+    WF -.governs.-> PIPELINE
+
+    DROP --> INGEST
+    PROMPT --> BRIEF
+    INGEST --> UNIFY
+    UNIFY --> RESEARCH
+    RESEARCH --> BRIEF
+    BRIEF --> ROUTE
+    ROUTE --> IMG
+    ROUTE --> REM
+    ROUTE --> HF
+    ROUTE --> W3D
+    IMG --> COMPOSITE
+    REM --> COMPOSITE
+    HF --> COMPOSITE
+    W3D --> COMPOSITE
+    COMPOSITE --> QC
+    QC -->|pass| EXPORT
+    QC -->|fail: root-cause note, max 2 retries| ROUTE
+    QC -->|2 failures: plain-language surface| USER["👤 User"]
+    EXPORT --> PB
+    PB --> SCALE
+
+    classDef deterministic fill:#1B4D3E,stroke:#0d2620,color:#fff
+    class INGEST,COMPOSITE,EXPORT deterministic

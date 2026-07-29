@@ -1,0 +1,19 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    permissions: {contents: write}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package skill
+        run: |
+          cd skill && zip -qr ../content-foundry-${{ github.ref_name }}.zip content-foundry \
+            -x "content-foundry/engines/remotion/node_modules/*" \
+               "content-foundry/engines/remotion/public/job/*" "*__pycache__*"
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: content-foundry-*.zip
+          generate_release_notes: true

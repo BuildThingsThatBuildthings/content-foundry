@@ -1,0 +1,7 @@
+.DS_Store
+.env
+node_modules/
+__pycache__/
+runs/
+output/
+skill/content-foundry/engines/remotion/public/job/

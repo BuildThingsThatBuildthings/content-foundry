@@ -1,0 +1,45 @@
+name: CI
+on:
+  push: {branches: [main]}
+  pull_request:
+jobs:
+  smoke:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install -r skill/content-foundry/requirements.txt
+      - name: doctor (informational)
+        run: python skill/content-foundry/scripts/doctor.py || true
+      - name: inventory handles messy drop
+        run: python skill/content-foundry/scripts/inventory.py tests/fixtures/drop-messy --quiet
+      - name: inventory halts on empty drop
+        run: |
+          python skill/content-foundry/scripts/inventory.py tests/fixtures/drop-empty --quiet && exit 1 || echo "correctly halted"
+      - name: composite + lint PASS on fixture
+        run: |
+          python skill/content-foundry/scripts/composite.py \
+            --base tests/fixtures/drop-messy/photo.jpg \
+            --agent tests/fixtures/agent-testbrand --channel ig --treatment panel \
+            --headline "CI Smoke Test" --out /tmp/cf-ci.jpg
+          python skill/content-foundry/scripts/brand_lint.py /tmp/cf-ci.jpg \
+            --agent tests/fixtures/agent-testbrand
+      - name: lint FAILS on wrong hex (the gate must be able to fail)
+        run: |
+          mkdir -p /tmp/wronghex && cp -r tests/fixtures/agent-testbrand/. /tmp/wronghex/
+          sed -i.bak 's/#1b4d3e/#7c3aed/' /tmp/wronghex/brand-context-visual.md
+          python skill/content-foundry/scripts/brand_lint.py /tmp/cf-ci.jpg --agent /tmp/wronghex && exit 1 || echo "correctly failed"
+      - name: lint FAILS when disclosure element stripped
+        run: |
+          python - <<'PY'
+          import json
+          m = json.load(open('/tmp/cf-ci.composite.json'))
+          m['elements'] = [e for e in m['elements'] if not (e['type']=='compliance' and e['field']=='disclosure')]
+          json.dump(m, open('/tmp/tampered.json','w'))
+          PY
+          python skill/content-foundry/scripts/brand_lint.py /tmp/cf-ci.jpg \
+            --agent tests/fixtures/agent-testbrand --manifest /tmp/tampered.json && exit 1 || echo "correctly failed"
