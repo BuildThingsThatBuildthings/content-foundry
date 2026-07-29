@@ -1,11 +1,13 @@
-# Post Bridge Automation (Phase 3 — bonus module)
+# PostBridge scheduling adapter
 
-Isolated on purpose: **the core skill has zero dependency on this file.** Everything through Stage 9
-works without Post Bridge configured.
+PostBridge is a first-class optional Stage 10 adapter. Everything through Stage 9 works
+without it, and an unavailable account produces a verified schedule manifest instead of
+silently pretending posts were created.
 
 Post Bridge ships a public npm CLI, so a brokerage needs no MCP configuration — an API key is
-enough. `npx postbridge-cli <command>` (Node 18+). Key via `POST_BRIDGE_API_KEY` in the workspace
-`.env`.
+enough. `npx postbridge-cli <command>` (Node 18+). Key via
+`POST_BRIDGE_API_KEY` in the host secret store or environment. The legacy
+`POSTBRIDGE_API_KEY` spelling is accepted for migration only.
 
 Platforms: Instagram, TikTok, YouTube, X, LinkedIn, Facebook, Pinterest, Threads, Bluesky.
 

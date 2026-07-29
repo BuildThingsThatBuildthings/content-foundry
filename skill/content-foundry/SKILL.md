@@ -1,176 +1,231 @@
 ---
 name: content-foundry
 description: >
-  Brand-locked social content engine for real estate agents and brokerages. Point it at one agent's
-  context folder, drop mixed assets (listing photos, walkthrough video, MLS PDF, links) into a drop
-  folder, then pick a prompt-library job or freehand prompt — it unifies the assets, researches the
-  local market, writes a reviewable creative brief, generates imagery, composites the agent's real
-  logo/colors/license/disclosure deterministically, gates the result against brand lint and a slop
-  check, and exports channel-sized assets. Optional draft-first scheduling via Post Bridge.
-  Triggers on "/content-foundry", "new listing post", "just sold post", "open house promo",
-  "market update graphic", "make a post for {agent}", and drops into a drop folder.
+  End-to-end universal creative production skill for Claude and OpenAI/Codex. Use it when a user
+  provides any mix of images, video, audio, documents, URLs, repositories, brand folders,
+  transcripts, data, or only a free-form request and wants researched, strategically distinct,
+  brand-correct stills, videos, HyperFrames compositions, Three.js worlds, audio, web assets,
+  exports, deployments, or scheduled drafts. Also triggers on "/content-foundry", "produce this
+  campaign", "turn these references into video", "build a launch asset system", listing/event/
+  educational/data-story work, and Content Foundry setup, doctor, resume, QC, or packaging.
 ---
 
-# Content Foundry — brand-locked content production for real estate
+# Content Foundry
 
-Invocations:
-- `/content-foundry --agent {slug} --drop {path} "{prompt or library job}"`
-- `/content-foundry setup --agent {slug}` — build or complete an agent's foundation folder
-- `/content-foundry setup --from-research {urls}` — research-drafted foundation for outreach (see `references/prospect-research.md`)
-- `/content-foundry outreach --listing {url} --agent-profile {url}` — the full spec-sample suite, end to end (see `references/engine-outreach.md`)
-- `/content-foundry resume {run-dir}` — resume at the first non-done stage
-- `/content-foundry roster --agents a,b,c "{prompt}"` — same job across N agents (Phase 3)
+Content Foundry is one portable production system with two thin host surfaces: Claude and
+OpenAI/Codex. It accepts imperfect inputs, researches the assignment, develops a real creative
+system, routes by capability, executes through audited adapters, blocks weak or unsafe work, and
+exports or schedules only with explicit approval.
+
+## Invocations
+
+```text
+/content-foundry produce
+  --context <portable-brand-or-workspace-folder>
+  --input <repeatable-file-folder-url-repository-or-text>
+  --goal "<outcome>"
+  --channels <channels>
+  --budget <ceiling>
+```
+
+Shortcuts `event`, `listing`, `product-launch`, `education`, `data-story`, and `general-social`
+compile into the same job contract. Existing `agents/{slug}` folders remain valid contexts.
+
+Deterministic CLI:
+
+```bash
+python scripts/foundry.py prepare --input <source> --goal "<outcome>" --run-dir <run>
+python scripts/foundry.py plan --run-dir <run>
+python scripts/foundry.py approve --run-dir <run> --direction <direction-id>
+python scripts/foundry.py engine-plan --run-dir <run> --engine <engine>
+python scripts/foundry.py engine-execute --run-dir <run> --engine <engine>
+python scripts/foundry.py resume --run-dir <run>
+```
+
+The host interprets, researches, describes media, and manages approvals. The shared runtime owns
+schemas, manifests, state, engine receipts, and resumability.
 
 ## Non-negotiable laws
 
-1. **The folder is the tenancy boundary.** Everything brand-related comes from
-   `agents/{slug}/`. Never read another agent's folder in a run. Never carry brand facts between
-   runs from memory. If a needed brand fact is missing, ask — do not infer it from the photos, the
-   listing, or a prior agent.
-2. **Composite, don't request.** The generative model never produces the logo, the exact brand hex,
-   the license number, or the disclosure line. Those are placed by `scripts/composite.py` from files
-   on disk. Asking a model for them is the failure this product exists to prevent.
-3. **Brief before spend.** Stage 4 writes `BRIEF.md` to disk and stops for review before any
-   generation call. Regeneration is expensive; briefs are cheap.
-4. **The lint must be able to fail.** `brand_lint.py` is a gate, not a formality. If it has never
-   failed on a run, it is not wired correctly.
-5. **Draft-first.** Post Bridge posts are created scheduled/draft. Never publish immediately unless
-   `auto_publish: true` is explicitly set in the agent's Tier-2 config.
-6. **A listing job runs under the listing's presenting agent's folder.** No folder → run
-   `setup --from-research {urls}` (see `references/prospect-research.md`) or a live setup first.
-   Never default to a demo persona or a previously-used agent; demo folders refuse listing
-   content by design.
-7. **Compliance is placement, not wording.** The skill enforces that required language is present
-   and legible. The brokerage supplies the wording. Never invent or paraphrase a legal disclosure.
-   This is assistive, not legal advice.
+1. **Portable context is the tenancy boundary.** Read brand, person, company, product, event, and
+   client truth only from the selected context and cited inputs. Never transfer identity or facts
+   from memory or another run.
+2. **Composite exact truth.** Logos, exact colors, disclosures, sponsor marks, numbers, citations,
+   and CTA details are placed deterministically from files and ledgers. A model may create the
+   visual world; it may not redraw or remember protected brand truth.
+3. **Brief before spend.** Stage 4 writes `BRIEF.md`, `creative-system.json`, `claims-ledger.json`,
+   and `route-plan.json`, then stops. Generation requires a current hashed `approval.json`.
+4. **Preview before final render; approval before external write.** A passed check is not preview
+   approval. Deployment, scheduling, publishing, and provider spend obey `job.json`.
+5. **Every engine uses the adapter contract.** `probe`, `plan`, `execute`, `verify`, `artifacts`,
+   and `receipt` are mandatory. No asset may bypass `run.json`.
+6. **Fail soft, never silently.** Unsupported files are preserved and reported. Missing optional
+   engines activate declared fallbacks. Failed factual, rights, brand, visual, accessibility, or
+   technical gates block export.
+7. **Directions must be structurally different.** A palette swap is not a concept. Layout, scene
+   construction, pacing, camera behavior, hierarchy, and metaphor must differ.
+8. **Public core, optional private extensions.** Never require private paths, repositories, skills,
+   identities, or credentials. Optional adapters must disclose their capability difference.
 
-## Setup mode
+## Universal input contract
 
-Run before an agent's first production run.
+Stage 1 accepts local files/folders, repositories, URLs, inline text, and portable context folders.
+Each input becomes an `asset-manifest.json` record with:
 
-1. Locate `agents/{slug}/`. If absent, create it from `references/context-kit-import.md`.
-2. Read `_MANIFEST.md` and honor its stated load order and its Tier-1-overrides-Tier-2 rule.
-3. Read Tier 1 (`about-me.md`, `brand-voice.md`, `working-style.md`). Any file still containing
-   template placeholder comments is **blank** — interview the agent to fill it. Do not fabricate
-   voice or identity.
-4. Author the two Tier-2 files if missing (see `references/context-kit-import.md`):
-   - `brand-context-visual.md` — hexes, logo paths, fonts, photography style
-   - `brand-context-compliance.md` — brokerage disclosure, license number + placement, Fair
-     Housing language, banned claims
-   If the agent drops a brand guide PDF, extract and pre-fill, then confirm every extracted value.
-5. **Dependency check, at setup and never later:** run `python scripts/doctor.py` — it verifies
-   Python/Pillow (required), ffmpeg/node (video tier), and Post Bridge (optional) with per-OS
-   install hints. Also confirm the logo files at the declared paths actually exist. Anything
-   missing is reported now, in plain language; a dependency discovered missing at Stage 6 is a
-   defect.
-6. Verify per `_MANIFEST.md`'s own test: can you state who this agent is, how they sound, and what
-   the rules are? If any answer is vague, the files need more work — say so.
+- stable ID, type, MIME, hash, size, dimensions/duration where available;
+- source, access time, provenance, staging location, and intended role;
+- rights basis and review status;
+- extraction, description, or transcript status;
+- duplicate relationships and preservation status.
 
-## The pipeline
+The standard-library inventory runs before any optional provider. See
+`references/universal-inputs.md`.
 
-Track state in `run.json.stages` (pending → in-progress → done). Update after each stage.
-Run artifacts live in `runs/{YYYYMMDD-slug}/`.
+## Tool and engine composition plan
 
-### Stage 1 — INGEST
-`python scripts/inventory.py {drop-path} --out runs/{run}/asset-manifest.json`
+Always include the routed tools and their exact role in `BRIEF.md`:
 
-Deterministic walk: type, size, hash, dimensions, EXIF. Flags duplicates by hash, unsupported
-types, and empty folders. **Unsupported files are reported, never fatal.** If the folder is empty or
-every asset is unusable, stop here and say so — don't proceed to spend tokens.
-
-### Stage 2 — UNIFY
-`python scripts/unify.py runs/{run}/asset-manifest.json --out runs/{run}/unified-context.md`
-
-Per-type handlers → text + structured metadata:
-- audio / video → transcript (whisper or equivalent)
-- PDF → extracted text (MLS sheets, brand guides)
-- `.txt` / `.md` containing links → fetch and summarize
-- images → model-generated description + EXIF
-
-Output is one canonical document describing everything dropped. Describe images honestly: a
-screenshot of a prior marketing graphic is a *reference*, not a listing photo, and the brief should
-know the difference.
-
-### Stage 3 — RESEARCH
-Web search scoped by the prompt. Depth comes from the `prompt-library.md` entry
-(`market update` = deep; `testimonial spotlight` = skip). Cite every statistic with a source URL —
-uncited numbers cannot pass the truth check in Stage 8.
-
-### Stage 4 — BRIEF ✋
-Compose `runs/{run}/BRIEF.md`: objective, key message, target channels, brand constraints (from the
-agent folder), channel constraints (from `channel-specs.md`), assets to feature (by filename),
-research citations, and the composite plan (which hex where, logo placement, disclosure position).
-
-**Write it to disk and stop.** Present it for review. Only continue on approval or edit.
-
-### Stage 5 — ROUTE
-
-| Output need | Engine | Reference |
-|---|---|---|
-| Static graphic, carousel, quote card | Still-image engine | `references/engine-stills.md` |
-| Digital walkthrough / sales brief / teaser video | Remotion (3 comps) | `references/engine-remotion.md` |
-| Interactive scroll-tour listing microsite | scroll-world engine | `references/engine-scroll-tour.md` |
-| Outreach spec sample — full suite + live page | canonical workflow | `references/engine-outreach.md` |
-| Outreach landing page component | `engines/outreach/build_page.py` | `references/engine-outreach.md` |
-| Cinematic / AI-generated scenes | BYO AI-video tool (optional) | `references/engine-hyperframes.md` |
-| Property tour, spatial 3D content | 3D (post-v1) | `references/engine-3d.md` |
-
-Load only the routed engine's doc. **Graceful degradation:** if a video engine's dependency is
-missing, fall back to a still or carousel from the same brief and offer to walk through the install.
-Never fail a run because an optional engine is absent. The one exception is a missing image API key,
-which setup should already have caught.
-
-### Stage 6 — GENERATE
-Produce **base imagery only** into `runs/{run}/working/`. No logo, no headline type, no disclosure
-in the generated pixels. Steer the prompt toward the brand palette so the composite doesn't fight
-the base, but never rely on that steering for correctness.
-
-### Stage 7 — COMPOSITE ⚙️
-`python scripts/composite.py runs/{run} --agent {slug} --channel {ch}`
-
-Deterministically layers, at `channel-specs.md` coordinates:
-- brand color blocks / scrims from `brand-context-visual.md`
-- the logo file's actual bytes
-- headline and caption type, laid out by **Pretext** into the channel safe zone
-- license number and disclosure line from `brand-context-compliance.md`
-
-### Stage 8 — QC GATE (both must pass)
-1. `python scripts/brand_lint.py runs/{run} --agent {slug}` — composite verification (logo present,
-   exact hexes drawn, compliance string present and legible at thumbnail size) plus palette ΔE
-   sampling of the generated region.
-2. `python scripts/slop_check.py runs/{run}` plus a model QC pass against `references/qc-gate.md`:
-   slop taxonomy, hook strength, one idea per asset, thumbnail readability. Verify every on-screen
-   number against a Stage 3 citation or a dropped asset.
-
-Failures route back to Stage 6 with a written root-cause note. **Max 2 retries**, then stop and
-explain to the user in plain language what failed and what would fix it. Never quietly ship a
-failing asset; never loop silently.
-
-### Stage 9 — EXPORT
-`python scripts/export.py runs/{run} --channels ig,fb,li`
-
-Sizes/encodes per channel, applies `[AGENT]_[TYPE]_[descriptor]_[YYYY-MM-DD]`, writes to `output/`
-with a summary manifest. Report what was produced, where it is, and the run's cost-per-asset.
-
-### Stage 10 — PUBLISH (optional)
-Only when the agent has Post Bridge configured. See `references/postbridge-automation.md`.
-Draft/scheduled by default; >300MB variants rejected before upload.
-
-## Failure surfaces — say these plainly
-
-| Condition | Response |
+| Capability | Composition role |
 |---|---|
-| Drop folder empty or all-unusable | Stop at Stage 1, list what was found and what's needed |
-| Tier-1 file still has template placeholders | Stop, run setup interview for that file |
-| Logo path in Tier 2 doesn't resolve | Stop at setup/composite, name the missing path |
-| Image API key absent | Stop at setup with the key-configuration steps |
-| Brand lint fails twice | Surface root cause + the specific brand value that didn't land |
-| Required disclosure missing from Tier 2 | Ask the brokerage for wording; never draft it |
+| Claude/OpenAI host | Interpret intent, perform host research/media understanding, and conduct approval conversations against the same portable contracts. |
+| Native brand context | Build or import a portable foundation. Brand Brain-compatible folders may be imported, but private Brand Brain is never required. |
+| Browser/research | Read live pages, capture interfaces, verify claims, and record URLs plus access dates in the claims ledger. |
+| Media resolver | Resolve official logos, headshots, fonts, footage, audio, licensing, and provenance before generation. |
+| OpenAI/Gemini still adapters | Generate or edit source imagery without logos, exact type, disclosures, or factual overlays. Use either provider or the deterministic fallback. |
+| HyperFrames | Build cinematic HTML timelines, scene transitions, multi-engine assembly, preview, finishing, and master renders. It is a real local project adapter. |
+| Remotion | Render deterministic typography, captions, data, UI demonstrations, presenter plates, CTAs, and compliance overlays. |
+| Bundled Three.js world builder | Build pinned local 3D scenes, spatial camera paths, depth transitions, and `hf-seek`-driven worlds without a private repository. |
+| Pretext | Compute deterministic safe-zone-aware typography and line breaks. |
+| Pillow composite | Place exact logos, colors, facts, citations, sponsor marks, disclosures, and export-safe treatments. |
+| Audio adapters | Use approved recordings or configured OpenAI, HeyGen, or local Kokoro voices; store timings and rights. |
+| FFmpeg/ffprobe | Conform, stitch, normalize loudness, mux captions, encode variants, create thumbnails, and perform technical QC. |
+| Netlify/Vercel | Optionally deploy unlisted review pages or approved interactive assets with readback receipts. |
+| PostBridge | Inspect queues, upload media, create scheduled drafts, and reconcile returned post IDs. Never treat a local schedule manifest as a scheduled post. |
+| GitHub | Distribute source, test clean installs, publish semantic releases, checksums, changelogs, and rights-clean fixtures. |
+| RyVibes-derived QC | Apply vendored rights-safe slop, hierarchy, specificity, distinctness, hook, and watch-through gates. |
 
-## References
-- `references/context-kit-import.md` — agent folder import + Tier-2 authoring
-- `references/channel-specs.md` — platform dimensions, safe zones, caption limits
-- `references/prompt-library.md` — 8 realtor jobs-to-be-done
-- `references/engine-stills.md` — image API + Pretext layout + composite recipe
-- `references/qc-gate.md` — slop taxonomy + brand lint checklist
-- `references/postbridge-automation.md` — draft-first scheduling
+Read only the references for the selected engines. HyperFrames and Three.js require
+`references/engine-hyperframes.md` and `references/engine-3d.md`.
+
+## Ten-stage production pipeline
+
+### 1 — Ingest
+
+Create `job.json`, `asset-manifest.json`, and `run.json`. Preserve unsupported inputs. Stop only
+when a required source is missing or unusable; do not crash on mixed folders.
+
+### 2 — Unify
+
+Extract documents/data, inspect repositories, transcribe media, describe images, capture pages,
+and normalize context in `unified-context.md`. Mark unresolved host actions explicitly.
+
+### 3 — Research
+
+Fill evidence gaps, decompose references, verify live facts, and maintain `claims-ledger.json`.
+Every number, testimonial, event detail, product assertion, and market fact needs a source.
+
+### 4 — Brief and creative system — stop for approval
+
+Write:
+
+- objective, audience, promise, conversion action, deliverables, formats, channels, cost ceiling;
+- claims/rights status and open blockers;
+- exact tool list with composition role and fallbacks;
+- at least three structurally different concepts in `creative-system.json`;
+- route and per-engine cost/limitation plans.
+
+Do not create `working/` before approval. Approval hashes job, manifest, brief, creative system,
+claims ledger, and route; later drift invalidates it.
+
+### 5 — Route
+
+Load the selected domain pack from `packs/` and choose engines by capabilities, dependency probes,
+budget, rights, and deliverable needs. Fallbacks must state what capability is lost.
+
+### 6 — Generate
+
+Execute approved engine plans. Generate base imagery, worlds, footage, audio, diagrams, and
+interface captures without exact brand truth. Each call records provider/model/version, cost,
+hashes, warnings, and status.
+
+### 7 — Composite
+
+Apply exact logos, fonts, colors, copy, facts, disclosures, sponsor marks, citations, captions,
+safe zones, and CTA details deterministically. Use Pretext/Pillow/Remotion rather than image-model
+text for required copy.
+
+### 8 — Blocking QC
+
+Run all applicable gates:
+
+- factual and citation;
+- rights and provenance;
+- brand and compliance;
+- visual hierarchy, specificity, distinctness, slop, and hook;
+- accessibility, safe zones, captions, and contrast;
+- technical dimensions, duration, codec, loudness, missing media, and hashes;
+- human watch-through or visual inspection.
+
+Write receipts and retry causes. Maximum two generation retries per root cause; then stop with the
+smallest recovery action. See `references/qc-gate.md`.
+
+### 9 — Export
+
+Create channel-native deliverables, thumbnails, captions, source packages, `export-manifest.json`,
+and cost report. Filename and channel rules come from `references/channel-specs.md`.
+
+### 10 — Deploy or schedule
+
+Only after explicit approval. Deploy approved interactive work or create PostBridge scheduled
+drafts. Store returned URLs/post IDs and immediately read them back. Reconcile expected account,
+asset, caption, time, and queue state. “Prepared” and “uploaded” are not “scheduled.”
+
+## Creative-system contract
+
+Every `creative-system.json` contains strategic hook, emotional promise, narrative arc, reference
+decomposition, visual world/metaphor, layout families, scene archetypes, type scale/behavior,
+depth, materials, lighting, color/texture, camera grammar, motion cadence, transition motif,
+captions, audio signature, CTA system, and anti-reference/slop risks.
+
+Reusable archetypes include cinematic world reveal, asymmetric editorial, presenter/proof split,
+kinetic workflow, 3D control room, product/interface demo, data story, and conversion endcard.
+See `references/creative-system.md`.
+
+## Domain packs
+
+- `general-social` — general branded social content;
+- `event-campaign` — classes, events, presenters, logistics, sponsors, registration;
+- `real-estate` — listings, local market work, brokerage rules, Fair Housing;
+- `product-launch` — repository, interface, proof, demo, conversion;
+- `education` — lesson promise, learning arc, exercises, instructor proof;
+- `data-story` — PDF/CSV evidence, methods, comparisons, charts, accessibility.
+
+Packs may add constraints; they may not weaken universal evidence, rights, approval, or QC gates.
+
+## Setup, doctor, self-test, and migration
+
+```bash
+python scripts/doctor.py --json
+python scripts/self_test.py
+python scripts/foundry.py adapters --json
+```
+
+Provider credentials are optional capability upgrades. Use the host's secure credential setup;
+never print, write, or request secret values in chat. A clean core install must still produce
+deterministic still, Remotion/FFmpeg, HyperFrames-project, and Three.js-project fallbacks when their
+documented local dependencies are installed.
+
+## Reference map
+
+- `references/universal-inputs.md`
+- `references/creative-system.md`
+- `references/adapter-contract.md`
+- `references/engine-stills.md`
+- `references/engine-remotion.md`
+- `references/engine-hyperframes.md`
+- `references/engine-3d.md`
+- `references/engine-scroll-tour.md`
+- `references/qc-gate.md`
+- `references/channel-specs.md`
+- `references/postbridge-automation.md`
+- `references/context-kit-import.md`

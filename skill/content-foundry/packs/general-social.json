@@ -1,0 +1,15 @@
+{
+  "name": "general-social",
+  "domain": "general",
+  "description": "General branded social and campaign production.",
+  "default_hook": "Turn the most specific value in the source into an immediate reason to care.",
+  "emotional_promise": "Make the next action feel obvious and worthwhile.",
+  "visual_world": "A tactile brand world derived from source evidence.",
+  "lighting": "Motivated editorial light with restrained practical accents.",
+  "materials": "Brand-derived color, paper, glass, metal, and source-specific texture.",
+  "transition_motif": "Object match or depth transition grounded in the source.",
+  "engines": ["stills", "remotion", "hyperframes", "audio"],
+  "fallbacks": {"hyperframes": "remotion", "remotion": "stills"},
+  "required_evidence": ["claims", "rights", "brand"],
+  "default_deliverables": ["hero", "short-cut", "channel-still"]
+}

@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contentfoundry.dev/schemas/creative-system.schema.json",
+  "title": "Content Foundry creative system",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "strategic_hook",
+    "emotional_promise",
+    "narrative_arc",
+    "reference_decomposition",
+    "visual_world",
+    "layout_families",
+    "scene_archetypes",
+    "type_system",
+    "depth",
+    "lighting",
+    "camera_grammar",
+    "motion_cadence",
+    "transition_motif",
+    "caption_behavior",
+    "audio_signature",
+    "cta_system",
+    "anti_reference",
+    "directions"
+  ],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "status": {"type": "string"},
+    "selected_direction": {"type": "string"},
+    "strategic_hook": {"type": "string"},
+    "emotional_promise": {"type": "string"},
+    "narrative_arc": {"type": "array"},
+    "reference_decomposition": {"type": "array"},
+    "visual_world": {"type": "object"},
+    "layout_families": {"type": "array"},
+    "scene_archetypes": {"type": "array"},
+    "type_system": {"type": "object"},
+    "depth": {"type": "object"},
+    "lighting": {"type": "object"},
+    "camera_grammar": {"type": "array"},
+    "motion_cadence": {"type": "object"},
+    "transition_motif": {"type": "object"},
+    "caption_behavior": {"type": "object"},
+    "audio_signature": {"type": "object"},
+    "cta_system": {"type": "object"},
+    "anti_reference": {"type": "array"},
+    "directions": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "required": ["id", "layout_family", "camera_behavior", "pacing", "metaphor"],
+        "additionalProperties": true
+      }
+    }
+  }
+}

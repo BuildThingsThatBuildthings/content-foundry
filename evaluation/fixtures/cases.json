@@ -1,0 +1,80 @@
+{
+  "schema_version": "1.0",
+  "rights": "All names, claims, and content in these fixtures are fictional and MIT-test-only.",
+  "cases": [
+    {
+      "id": "mixed-event",
+      "pack": "event-campaign",
+      "domain": "event",
+      "kind": "text",
+      "goal": "Fill a fictional practical workshop"
+    },
+    {
+      "id": "real-estate-listing",
+      "pack": "real-estate",
+      "domain": "real-estate",
+      "kind": "text",
+      "goal": "Create a compliant campaign for a fictional listing"
+    },
+    {
+      "id": "software-launch",
+      "pack": "product-launch",
+      "domain": "software",
+      "kind": "repository",
+      "goal": "Launch a fictional workflow product"
+    },
+    {
+      "id": "transcript-recut",
+      "pack": "education",
+      "domain": "education",
+      "kind": "transcript",
+      "goal": "Recut a fictional lesson transcript"
+    },
+    {
+      "id": "pdf-csv-data-story",
+      "pack": "data-story",
+      "domain": "data",
+      "kind": "csv",
+      "goal": "Explain a fictional operating trend"
+    },
+    {
+      "id": "incomplete-brand",
+      "pack": "general-social",
+      "domain": "general",
+      "kind": "context",
+      "goal": "Plan a campaign while reporting missing brand decisions"
+    },
+    {
+      "id": "empty-corrupt-unsupported",
+      "pack": "general-social",
+      "domain": "general",
+      "kind": "unusable",
+      "goal": "Handle unusable input safely",
+      "expected": "blocked"
+    },
+    {
+      "id": "offline-provider-fallback",
+      "pack": "general-social",
+      "domain": "general",
+      "kind": "text",
+      "goal": "Plan deterministic output without hosted providers",
+      "expected": "provider-fallback"
+    },
+    {
+      "id": "host-conformance",
+      "pack": "event-campaign",
+      "domain": "event",
+      "kind": "text",
+      "goal": "Produce matching host manifests",
+      "expected": "host-conformance"
+    },
+    {
+      "id": "fresh-install-resume",
+      "pack": "product-launch",
+      "domain": "software",
+      "kind": "repository",
+      "goal": "Resume a portable run after moving it",
+      "expected": "portable-resume"
+    }
+  ]
+}

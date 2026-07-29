@@ -1,0 +1,4 @@
+interface:
+  display_name: "Content Foundry"
+  short_description: "Universal brand-safe production pipeline"
+  default_prompt: "Use Content Foundry to turn my mixed inputs into researched, brand-correct, production-ready assets through the approval gate."

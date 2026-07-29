@@ -1,19 +1,40 @@
 name: Release
 on:
   push:
-    tags: ['v*']
+    tags: ["v*"]
+
 jobs:
   package:
     runs-on: ubuntu-latest
     permissions: {contents: write}
     steps:
       - uses: actions/checkout@v4
-      - name: Package skill
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            skill/content-foundry/engines/package-lock.json
+            skill/content-foundry/engines/remotion/package-lock.json
+      - run: python -m pip install -r skill/content-foundry/requirements.txt
+      - run: npm ci
+        working-directory: skill/content-foundry/engines
+      - run: npm ci
+        working-directory: skill/content-foundry/engines/remotion
+      - name: Verify release contracts
         run: |
-          cd skill && zip -qr ../content-foundry-${{ github.ref_name }}.zip content-foundry \
-            -x "content-foundry/engines/remotion/node_modules/*" \
-               "content-foundry/engines/remotion/public/job/*" "*__pycache__*"
+          python -m unittest discover -s tests -v
+          python skill/content-foundry/scripts/doctor.py --json
+          python skill/content-foundry/scripts/self_test.py
+          python scripts/evaluate.py
+          python .ci/quick_validate.py skill/content-foundry
+      - name: Package canonical skill for both hosts
+        run: python scripts/package_release.py --version "${GITHUB_REF_NAME}" --out dist
       - uses: softprops/action-gh-release@v2
         with:
-          files: content-foundry-*.zip
+          files: |
+            dist/content-foundry-*.zip
+            dist/SHA256SUMS
           generate_release_notes: true
