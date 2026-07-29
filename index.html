@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>The Lakefront Craftsman — Riley Shore</title>
+  <meta name="description" content="Scroll to walk through The Lakefront Craftsman." />
+  <link rel="preload" as="image" href="assets/room1.webp" />
+  <style>
+    @font-face { font-family: "CF Serif"; src: url("assets/font-display.ttf");
+                  font-display: swap; }
+    :root, .sw-root {
+      --cf-navy: #676147;
+      --cf-gold: #d49e5f;
+      --sw-bg: #676147;
+      --sw-ink: #ffffff;
+      --sw-ink-soft: #9fb0c0;
+      --sw-accent: #d49e5f;
+      --sw-font-display: "CF Serif", Didot, "Hoefler Text", Georgia, serif;
+      --sw-font-body: Georgia, "Times New Roman", serif;
+    }
+    body { background: #676147; margin: 0; }
+    .cf-compliance {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+      padding: 10px 18px; font: 12px/1.5 Helvetica, Arial, sans-serif;
+      color: #ffffff; opacity: 0.85;
+      background: #676147e6; text-align: center;
+    }
+
+    /* ---- Content Foundry theme on top of the engine (engine CSS is @layer sw,
+       so these unlayered rules always win). ---- */
+    .sw-copy__title { font-family: var(--sw-font-display); font-weight: 400; }
+    .sw-nav { background: color-mix(in srgb, var(--cf-navy) 62%, transparent);
+      border-color: color-mix(in srgb, var(--cf-gold) 35%, transparent); }
+    .sw-nav__item { color: color-mix(in srgb, #fff 72%, transparent); }
+    .sw-nav__item:hover { color: #fff; }
+    .sw-nav__item.is-active { color: var(--cf-navy); background: var(--cf-gold); }
+    .sw-topcta { background: var(--cf-gold); color: var(--cf-navy); }
+    .sw-brand__name { font-family: var(--sw-font-display); font-weight: 400;
+      letter-spacing: .02em; }
+    .sw-copy__tags li { background: transparent; border: 1px solid
+      color-mix(in srgb, var(--cf-gold) 55%, transparent);
+      color: var(--cf-gold); text-transform: uppercase;
+      letter-spacing: .08em; font-weight: 500; font-size: .74rem; }
+    .sw-route__label { background: color-mix(in srgb, var(--cf-navy) 80%, transparent);
+      color: #fff; border-color: color-mix(in srgb, var(--cf-gold) 30%, transparent); }
+    .sw-btn--primary { background: var(--cf-gold); color: var(--cf-navy); }
+    .sw-btn--ghost { color: #fff; border-color:
+      color-mix(in srgb, #fff 35%, transparent); }
+
+    /* ---- Staggered info reveal ("information pops up") ----
+       The engine drives .sw-copy's opacity from scroll; the tiny script below
+       flips .is-live at a threshold and these transitions sequence the children.
+       Scroll back and the sequence reverses. */
+    .sw-copy > * { opacity: 0; transform: translateY(22px);
+      transition: opacity .5s cubic-bezier(.22,.9,.24,1),
+                  transform .6s cubic-bezier(.22,.9,.24,1); }
+    .sw-copy.is-live > * { opacity: 1; transform: none; }
+    .sw-copy.is-live > .sw-copy__num     { transition-delay: .02s; }
+    .sw-copy.is-live > .sw-copy__eyebrow { transition-delay: .10s; }
+    .sw-copy.is-live > .sw-copy__title   { transition-delay: .20s; }
+    .sw-copy.is-live > .sw-copy__body    { transition-delay: .34s; }
+    .sw-copy.is-live > .sw-copy__tags    { transition-delay: .46s; }
+    .sw-copy.is-live > .sw-copy__cta     { transition-delay: .58s; }
+    .sw-copy__tags li { opacity: 0; transform: translateY(12px) scale(.96);
+      transition: opacity .4s ease, transform .45s cubic-bezier(.22,.9,.24,1); }
+    .sw-copy.is-live .sw-copy__tags li { opacity: 1; transform: none; }
+    .sw-copy.is-live .sw-copy__tags li:nth-child(1) { transition-delay: .50s; }
+    .sw-copy.is-live .sw-copy__tags li:nth-child(2) { transition-delay: .60s; }
+    .sw-copy.is-live .sw-copy__tags li:nth-child(3) { transition-delay: .70s; }
+    /* gold rule that draws in under the title */
+    .sw-copy__title::after { content: ""; display: block; width: 0; height: 3px;
+      margin-top: 18px; background: var(--cf-gold);
+      transition: width .6s cubic-bezier(.22,.9,.24,1) .30s; }
+    .sw-copy.is-live .sw-copy__title::after { width: 84px; }
+
+  </style>
+</head>
+<body>
+  <div id="top"></div>
+  <div id="world"></div>
+  <div class="cf-compliance">
+    Lic. #000000 (Demo) &nbsp;·&nbsp; Shore & Co. Realty | Fictional demo brokerage for Content Foundry. &nbsp;·&nbsp; Equal Housing Opportunity.
+  </div>
+  <script src="scrub-engine.js"></script>
+  <script>
+    mountScrollWorld(document.getElementById('world'), {
+  "brand": {
+    "name": "Riley Shore",
+    "href": "#top"
+  },
+  "cta": {
+    "label": "Schedule a showing",
+    "href": "#finale"
+  },
+  "hint": "scroll to walk through",
+  "diveScroll": 1.5,
+  "connScroll": 0.9,
+  "sections": [
+    {
+      "id": "room1",
+      "label": "The Arrival",
+      "still": "assets/room1.webp",
+      "clip": "assets/vid/room1.mp4",
+      "accent": "#d49e5f",
+      "scroll": 1.5,
+      "linger": 0.45,
+      "eyebrow": "Shorewood Lake",
+      "title": "The Arrival",
+      "body": "Timber portico, stone path, dusk on the water.",
+      "tags": [
+        "Timber portico",
+        "stone path",
+        "dusk on the water"
+      ]
+    },
+    {
+      "id": "room2",
+      "label": "The Entry",
+      "still": "assets/room2.webp",
+      "clip": "assets/vid/room2.mp4",
+      "accent": "#d49e5f",
+      "scroll": 1.5,
+      "linger": 0.45,
+      "eyebrow": "Shorewood Lake",
+      "title": "The Entry",
+      "body": "Sage board & batten, oak peg rail, plaster walls.",
+      "tags": [
+        "Sage board & batten",
+        "oak peg rail",
+        "plaster walls"
+      ]
+    },
+    {
+      "id": "room3",
+      "label": "The Living Room",
+      "still": "assets/room3.webp",
+      "clip": "assets/vid/room3.mp4",
+      "accent": "#d49e5f",
+      "scroll": 1.5,
+      "linger": 0.45,
+      "eyebrow": "Shorewood Lake",
+      "title": "The Living Room",
+      "body": "Steel windows to the lake, limestone fireplace.",
+      "tags": [
+        "Steel windows to the lake",
+        "limestone fireplace"
+      ]
+    },
+    {
+      "id": "room4",
+      "label": "The Kitchen",
+      "still": "assets/room4.webp",
+      "clip": "assets/vid/room4.mp4",
+      "accent": "#d49e5f",
+      "scroll": 1.5,
+      "linger": 0.45,
+      "eyebrow": "Shorewood Lake",
+      "title": "The Kitchen",
+      "body": "Sage shaker cabinetry, oak island, brass fixtures.",
+      "tags": [
+        "Sage shaker cabinetry",
+        "oak island",
+        "brass fixtures"
+      ]
+    },
+    {
+      "id": "room5",
+      "label": "The Primary",
+      "still": "assets/room5.webp",
+      "clip": "assets/vid/room5.mp4",
+      "accent": "#d49e5f",
+      "scroll": 1.5,
+      "linger": 0.45,
+      "eyebrow": "Shorewood Lake",
+      "title": "The Primary",
+      "body": "Oak beams, a window wall of morning lake light.",
+      "tags": [
+        "Oak beams",
+        "a window wall of morning lake light"
+      ]
+    },
+    {
+      "id": "room6",
+      "label": "The Bath",
+      "still": "assets/room6.webp",
+      "clip": "assets/vid/room6.mp4",
+      "accent": "#d49e5f",
+      "scroll": 1.5,
+      "linger": 0.45,
+      "eyebrow": "Shorewood Lake",
+      "title": "The Bath",
+      "body": "Oak double vanity, sage zellige walk-in shower.",
+      "tags": [
+        "Oak double vanity",
+        "sage zellige walk-in shower"
+      ]
+    },
+    {
+      "id": "room7",
+      "label": "The Deck",
+      "still": "assets/room7.webp",
+      "clip": "assets/vid/room7.mp4",
+      "accent": "#d49e5f",
+      "scroll": 1.5,
+      "linger": 0.45,
+      "eyebrow": "Shorewood Lake",
+      "title": "The Deck",
+      "body": "Cedar over the water, fire bowl, string lights.",
+      "tags": [
+        "Cedar over the water",
+        "fire bowl",
+        "string lights"
+      ],
+      "cta": {
+        "primary": {
+          "label": "Schedule a showing",
+          "href": "#"
+        },
+        "secondary": {
+          "label": "Riley Shore",
+          "href": "#top"
+        }
+      }
+    }
+  ],
+  "connectors": [
+    "assets/vid/conn1.mp4",
+    "assets/vid/conn2.mp4",
+    "assets/vid/conn3.mp4",
+    "assets/vid/conn4.mp4",
+    "assets/vid/conn5.mp4",
+    "assets/vid/conn6.mp4"
+  ]
+});
+
+    // Staggered reveal driver: the engine scrubs .sw-copy opacity from scroll;
+    // we quantize that into .is-live so the CSS sequence above plays (and
+    // reverses on scroll-back). Hysteresis stops flicker at the threshold.
+    (function () {
+      const copies = Array.from(document.querySelectorAll('.sw-copy'));
+      const live = new WeakMap();
+      (function watch() {
+        for (const c of copies) {
+          const o = parseFloat(c.style.opacity || '0');
+          const was = live.get(c) || false;
+          if (!was && o > 0.55) { c.classList.add('is-live'); live.set(c, true); }
+          else if (was && o < 0.25) { c.classList.remove('is-live'); live.set(c, false); }
+        }
+        requestAnimationFrame(watch);
+      })();
+    })();
+
+  </script>
+</body>
+</html>
