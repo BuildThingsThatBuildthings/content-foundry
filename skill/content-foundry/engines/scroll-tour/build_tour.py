@@ -213,6 +213,9 @@ def main():
     ap.add_argument("--agent", required=True)
     ap.add_argument("--scenes", required=True)
     ap.add_argument("--out", required=True)
+    ap.add_argument("--allow-demo", action="store_true")
+    ap.add_argument("--flights-dir", default=None,
+                    help="dir of per-room i2v parallax clips (s1.mp4..sN.mp4); used instead of zoompan when present")
     args = ap.parse_args()
 
     try:
@@ -222,11 +225,17 @@ def main():
     except BrandError as e:
         print(f"STOP: {e}", file=sys.stderr)
         return 1
+    if brand.demo and not args.allow_demo:
+        print(f"STOP: {brand.slug} is a DEMO persona — listing tours require the "
+              f"presenting agent's folder (or --allow-demo).", file=sys.stderr)
+        return 1
+
     missing = [k for k, v in required.items() if v is None]
     if missing:
         print(f"STOP: compliance strings not filled: {', '.join(missing)}",
               file=sys.stderr)
         return 1
+    design = brand.design
 
     cfg = json.loads(Path(args.scenes).read_text())
     scenes = cfg["scenes"]
@@ -247,7 +256,14 @@ def main():
             return 1
         sid = f"room{i + 1}"
         clip = vids / f"{sid}.mp4"
-        flight(photo, clip, direction=1 if i % 2 == 0 else -1)
+        i2v = Path(args.flights_dir) / f"s{i + 1}.mp4" if args.flights_dir else None
+        if i2v and i2v.exists():
+            # real parallax flight: re-encode to the engine's scrub spec
+            run(["ffmpeg", "-y", "-v", "error", "-i", str(i2v),
+                 "-vf", f"scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},fps={FPS}",
+                 *ENCODE, str(clip)])
+        else:
+            flight(photo, clip, direction=1 if i % 2 == 0 else -1)
         still_of(clip, assets / f"{sid}.webp")
         feats = [f.strip() for f in s["feature"].split(",")]
         sections.append({
@@ -274,10 +290,11 @@ def main():
                   focal, conn, vids)
         connectors.append(f"assets/vid/conn{i + 1}.mp4")
 
-    bundled_font = (Path(__file__).resolve().parent.parent.parent / "assets"
-                    / "fonts" / "PlayfairDisplay.ttf")
-    if bundled_font.exists():
-        shutil.copy2(bundled_font, assets / "font-display.ttf")
+    fonts_dir = Path(__file__).resolve().parent.parent.parent / "assets" / "fonts"
+    if (fonts_dir / "PlayfairDisplay.ttf").exists():
+        shutil.copy2(fonts_dir / "PlayfairDisplay.ttf", assets / "font-display.ttf")
+    if (fonts_dir / "SourceSans3.ttf").exists():
+        shutil.copy2(fonts_dir / "SourceSans3.ttf", assets / "font-sans.ttf")
     shutil.copy2(VENDOR / "scrub-engine.js", out / "scrub-engine.js")
     shutil.copy2(VENDOR / "LICENSE", out / "LICENSE-scroll-world")
 
@@ -301,6 +318,8 @@ def main():
   <style>
     @font-face {{ font-family: "CF Serif"; src: url("assets/font-display.ttf");
                   font-display: swap; }}
+    @font-face {{ font-family: "CF Sans"; src: url("assets/font-sans.ttf");
+                  font-weight: 200 900; font-display: swap; }}
     :root, .sw-root {{
       --cf-navy: {navy};
       --cf-gold: {gold};
@@ -308,8 +327,8 @@ def main():
       --sw-ink: {colors.get('text-on-dark', '#ffffff')};
       --sw-ink-soft: #9fb0c0;
       --sw-accent: {gold};
-      --sw-font-display: "CF Serif", Didot, "Hoefler Text", Georgia, serif;
-      --sw-font-body: Georgia, "Times New Roman", serif;
+      --sw-font-display: {("\"CF Sans\", Helvetica, Arial, sans-serif" if design.get("display_type") == "sans" else '\"CF Serif\", Didot, \"Hoefler Text\", Georgia, serif')};
+      --sw-font-body: {("Helvetica, Arial, sans-serif" if design.get("display_type") == "sans" else 'Georgia, \"Times New Roman\", serif')};
     }}
     body {{ background: {navy}; margin: 0; }}
     .cf-compliance {{

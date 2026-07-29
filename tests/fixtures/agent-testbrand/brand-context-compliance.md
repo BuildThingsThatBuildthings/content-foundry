@@ -29,5 +29,8 @@
 - testimonials permitted? yes
 - required attribution / disclaimer: "Client testimonial. Individual results vary."
 
+## Demo flag
+- demo: true
+
 ## Auto-publish
 - auto_publish: false

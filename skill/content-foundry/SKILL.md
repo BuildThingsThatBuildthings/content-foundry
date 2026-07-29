@@ -16,6 +16,8 @@ description: >
 Invocations:
 - `/content-foundry --agent {slug} --drop {path} "{prompt or library job}"`
 - `/content-foundry setup --agent {slug}` — build or complete an agent's foundation folder
+- `/content-foundry setup --from-research {urls}` — research-drafted foundation for outreach (see `references/prospect-research.md`)
+- `/content-foundry outreach --listing {url} --agent-profile {url}` — the full spec-sample suite, end to end (see `references/engine-outreach.md`)
 - `/content-foundry resume {run-dir}` — resume at the first non-done stage
 - `/content-foundry roster --agents a,b,c "{prompt}"` — same job across N agents (Phase 3)
 
@@ -34,7 +36,11 @@ Invocations:
    failed on a run, it is not wired correctly.
 5. **Draft-first.** Post Bridge posts are created scheduled/draft. Never publish immediately unless
    `auto_publish: true` is explicitly set in the agent's Tier-2 config.
-6. **Compliance is placement, not wording.** The skill enforces that required language is present
+6. **A listing job runs under the listing's presenting agent's folder.** No folder → run
+   `setup --from-research {urls}` (see `references/prospect-research.md`) or a live setup first.
+   Never default to a demo persona or a previously-used agent; demo folders refuse listing
+   content by design.
+7. **Compliance is placement, not wording.** The skill enforces that required language is present
    and legible. The brokerage supplies the wording. Never invent or paraphrase a legal disclosure.
    This is assistive, not legal advice.
 
@@ -104,6 +110,8 @@ research citations, and the composite plan (which hex where, logo placement, dis
 | Static graphic, carousel, quote card | Still-image engine | `references/engine-stills.md` |
 | Digital walkthrough / sales brief / teaser video | Remotion (3 comps) | `references/engine-remotion.md` |
 | Interactive scroll-tour listing microsite | scroll-world engine | `references/engine-scroll-tour.md` |
+| Outreach spec sample — full suite + live page | canonical workflow | `references/engine-outreach.md` |
+| Outreach landing page component | `engines/outreach/build_page.py` | `references/engine-outreach.md` |
 | Cinematic / AI-generated scenes | BYO AI-video tool (optional) | `references/engine-hyperframes.md` |
 | Property tour, spatial 3D content | 3D (post-v1) | `references/engine-3d.md` |
 

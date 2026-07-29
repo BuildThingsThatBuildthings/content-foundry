@@ -254,6 +254,14 @@ def main():
             # every other composite self-report surfaces as a warn — never drop
             warns.append(w)
 
+    # --- distinctness vs demo fixtures ---------------------------------------
+    DEMO_PRIMARIES = {"#676147": "riley-shore demo", "#1b4d3e": "testbrand fixture",
+                      "#051221": "retired demo"}
+    prim = colors.get("primary", "").lower()
+    if prim in DEMO_PRIMARIES and not getattr(brand, "demo", False):
+        fails.append(f"palette primary {prim} matches the {DEMO_PRIMARIES[prim]} "
+                     f"palette — output is not distinct from a demo persona")
+
     # --- verdict --------------------------------------------------------------
     print(f"BRAND LINT {brand.slug} / {asset_p.name}")
     if fails:

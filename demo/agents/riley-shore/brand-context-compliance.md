@@ -31,5 +31,8 @@
 - testimonials permitted? no
 - required attribution / disclaimer: "n/a — fictional demo persona"
 
+## Demo flag
+- demo: true
+
 ## Auto-publish
 - auto_publish: false

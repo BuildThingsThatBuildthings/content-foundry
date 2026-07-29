@@ -72,7 +72,7 @@ export const SalesBrief: React.FC<VideoProps> = (props) => {
         <TextCard brand={props.brand} text={props.community} frames={COMMUNITY_F} size={72} />
       </Sequence>
       <Sequence from={cursor + COMMUNITY_F} durationInFrames={props.endcard.frames}>
-        <Endcard brand={props.brand} subline={props.subline}
+        <Endcard design={props.design} brand={props.brand} subline={props.subline}
                  compliance={props.compliance} />
       </Sequence>
     </AbsoluteFill>

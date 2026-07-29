@@ -29,7 +29,7 @@ export const Teaser: React.FC<VideoProps> = (props) => {
     <AbsoluteFill style={{backgroundColor: props.brand.primary}}>
       <Bed src={props.audio.bed} volume={props.audio.bedVolumeSolo} totalFrames={total} />
       <Sequence durationInFrames={TEASER_INTRO_F}>
-        <IntroCard brand={props.brand} title={props.hook}
+        <IntroCard design={props.design} brand={props.brand} title={props.hook}
                    subline={props.subline} frames={TEASER_INTRO_F} />
       </Sequence>
       {picks.map((scene, i) => {
@@ -42,6 +42,7 @@ export const Teaser: React.FC<VideoProps> = (props) => {
               <FittedPhoto scene={scene} frames={TEASER_SHOT_F}
                            centerY={photoCenterY} index={i} />
               <RoomCallout
+                design={props.design}
                 room={scene.room} feature={scene.feature}
                 indexLabel={`${String(i + 1).padStart(2, '0')} / ${String(picks.length).padStart(2, '0')}`}
                 brand={props.brand} photoTop={top}
@@ -52,7 +53,7 @@ export const Teaser: React.FC<VideoProps> = (props) => {
         );
       })}
       <Sequence from={TEASER_INTRO_F + picks.length * TEASER_SHOT_F} durationInFrames={endF}>
-        <Endcard brand={props.brand} subline={props.subline}
+        <Endcard design={props.design} brand={props.brand} subline={props.subline}
                  compliance={props.compliance} />
       </Sequence>
     </AbsoluteFill>

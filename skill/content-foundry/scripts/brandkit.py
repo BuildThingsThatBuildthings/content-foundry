@@ -126,6 +126,18 @@ class AgentBrand:
         return p
 
     @property
+    def headshot_path(self):
+        """Agent headshot when declared and present; None otherwise. Used on
+        video endcards and outreach pages — the agent IS the brand."""
+        val = _field(self.visual, "headshot")
+        if not val:
+            return None
+        p = (self.dir / val).resolve()
+        if not p.exists() or (self.dir not in p.parents):
+            return None
+        return p
+
+    @property
     def logo_min_width(self):
         val = _field(self.visual, "minimum width")
         m = re.search(r"(\d+)", val or "")
@@ -164,6 +176,33 @@ class AgentBrand:
     @property
     def fair_housing(self):
         return _field(self.compliance, "required language")
+
+    @property
+    def demo(self):
+        """True when this folder is a demo/fixture persona. Demo agents may not
+        produce listing content without an explicit --allow-demo override."""
+        return (_field(self.compliance, "demo") or "false").lower() == "true"
+
+    @property
+    def design(self):
+        """Design tokens from brand-context-design.md (research-drafted).
+
+        Defaults preserve the original editorial look when the file is absent.
+        layout_family: editorial-panel | full-bleed-bold | split-frame
+        display_type:  serif | sans
+        motion_energy: calm | confident | energetic
+        accent_treatment: rule | block
+        """
+        path = self.dir / "brand-context-design.md"
+        out = {"layout_family": "editorial-panel", "display_type": "serif",
+               "motion_energy": "calm", "accent_treatment": "rule"}
+        if path.exists():
+            text = path.read_text(encoding="utf-8")
+            for key in out:
+                val = _field(text, key.replace("_", " "))
+                if val:
+                    out[key] = val.split("|")[0].strip()
+        return out
 
     @property
     def auto_publish(self):

@@ -47,6 +47,7 @@ MIN_COMPLIANCE_PX = 14       # floor for legibility of legal text
 
 BUNDLED_FONTS = Path(__file__).resolve().parent.parent / "assets" / "fonts"
 BUNDLED = {"display": BUNDLED_FONTS / "PlayfairDisplay.ttf",
+           "sans": BUNDLED_FONTS / "SourceSans3.ttf",
            "body": BUNDLED_FONTS / "SourceSans3.ttf"}
 # OS font fallbacks, cross-platform (macOS, Linux, Windows).
 SYSTEM_FONTS = [
@@ -126,7 +127,7 @@ def wrap(draw, text, font, max_width):
     return lines
 
 
-def fit_text(draw, text, font_path, max_width, max_lines, start_size, min_size):
+def fit_text(draw, text, font_path, max_width, max_lines, start_size, min_size, kind="display"):
     """Shrink until the text fits max_lines. Returns None if it can't.
 
     Returning None is correct behavior: the caller sends the brief back for
@@ -134,7 +135,7 @@ def fit_text(draw, text, font_path, max_width, max_lines, start_size, min_size):
     """
     size = start_size
     while size >= min_size:
-        font, fell_back = load_font(font_path, size)
+        font, fell_back = load_font(font_path, size, kind=kind)
         lines = wrap(draw, text, font, max_width)
         if len(lines) <= max_lines:
             return font, lines, size, fell_back
@@ -187,6 +188,8 @@ def main():
     ap.add_argument("--subhead", default=None)
     ap.add_argument("--treatment", choices=["auto", "panel"], default="auto",
                     help="auto = contrast-driven scrim/panel; panel = brief-directed solid panel")
+    ap.add_argument("--allow-demo", action="store_true",
+                    help="permit a demo/fixture agent to produce output (samples of the pipeline itself only)")
     ap.add_argument("--out", required=True)
     ap.add_argument("--manifest", default=None)
     args = ap.parse_args()
@@ -198,6 +201,16 @@ def main():
     except BrandError as e:
         print(f"STOP: {e}", file=sys.stderr)
         return 1
+
+    if brand.demo and not args.allow_demo:
+        print(f"STOP: {brand.slug} is a DEMO persona. Listing content runs under "
+              f"the listing's presenting agent. Run prospect research / setup to "
+              f"build their folder, or pass --allow-demo for pipeline-demo "
+              f"output only.", file=sys.stderr)
+        return 1
+
+    design = brand.design
+    display_kind = "sans" if design.get("display_type") == "sans" else "display"
 
     # Compliance gate BEFORE spending work: never composite a production asset
     # with a PENDING legal string. Blocked is recoverable; published is not.
@@ -222,6 +235,7 @@ def main():
     headline_font_path = brand.headline_font  # from brand-context-visual.md
     manifest = {
         "agent": brand.slug, "channel": args.channel, "size": [W, H],
+        "design": design,
         "safe_zone": {"left": sl, "top": st, "right": sr, "bottom": sb},
         "colors": colors, "elements": [], "warnings": [],
     }
@@ -229,9 +243,11 @@ def main():
     text_w = W - sl - sr
 
     # --- headline ---------------------------------------------------------
+    bold_family = design.get("layout_family") == "full-bleed-bold"
+    start_sz = int(H * (0.085 if bold_family else 0.075))
     fitted = fit_text(draw, args.headline, headline_font_path,
-                      text_w, max_lines=3, start_size=int(H * 0.075),
-                      min_size=int(H * 0.030))
+                      text_w, max_lines=3, start_size=start_sz,
+                      min_size=int(H * 0.030), kind=display_kind)
     if not fitted:
         print(f"STOP: headline does not fit {args.channel} safe zone above "
               f"legible size ({len(args.headline)} chars, max "
@@ -305,8 +321,12 @@ def main():
         panel = (0, max(0, h_top - pad), W, H)
         draw.rectangle(panel, fill=(*hex_to_rgb(colors["primary"]), 255))
         accent = hex_to_rgb(colors.get("accent", colors["primary"]))
-        draw.rectangle([sl, panel[1], sl + int(W * 0.09), panel[1] + max(3, H // 300)],
-                       fill=(*accent, 255))
+        if design.get("accent_treatment") == "block":
+            # bold family: a solid accent block bleeding off the left edge
+            draw.rectangle([0, panel[1], int(W * 0.028), H], fill=(*accent, 255))
+        else:
+            draw.rectangle([sl, panel[1], sl + int(W * 0.09), panel[1] + max(3, H // 300)],
+                           fill=(*accent, 255))
         panel_ratio = contrast_ratio(text_rgb, hex_to_rgb(colors["primary"]))
         manifest["elements"].append({
             "type": "panel",

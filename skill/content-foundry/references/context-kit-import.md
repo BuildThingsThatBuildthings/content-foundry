@@ -70,6 +70,11 @@ If any answer is vague, say so and keep interviewing.
 - clear space:      ___ px      <!-- padding that must stay empty around the logo -->
 - default placement: bottom-left | bottom-right | top-left | top-right
 
+## Headshot
+<!-- Optional but strongly recommended: the agent IS the brand. Used on video
+     endcards and outreach pages when present. -->
+- headshot: assets/headshot.jpg
+
 ## Typography
 - headline font: ______        <!-- file path or system/Google font name -->
 - body font:     ______
