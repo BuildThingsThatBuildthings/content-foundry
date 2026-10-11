@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0",
+  "blocked_sha256": {
+    "7d53e66df3860157b034ac84253903394767190e1da2014549f62d6aaaa6eac2": {
+      "reason": "Brand-rejected soundtrack. Do not ingest, generate with, copy, or export.",
+      "scope": "global",
+      "added_at": "2026-08-03"
+    }
+  }
+}
