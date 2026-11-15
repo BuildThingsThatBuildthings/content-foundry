@@ -1,0 +1,15 @@
+{
+  "name": "real-estate",
+  "domain": "real-estate",
+  "description": "Listings, market education, agent branding, and compliant outreach.",
+  "default_hook": "Lead with the single property or market fact that changes a decision.",
+  "emotional_promise": "Make the property and the agent's value easy to understand.",
+  "visual_world": "A property-led editorial world using only truthful listing imagery.",
+  "lighting": "Photography-matched natural light with brand accents.",
+  "materials": "Property materials, brokerage geometry, and restrained brand fields.",
+  "transition_motif": "Doorway, sightline, or architectural match.",
+  "engines": ["stills", "remotion", "hyperframes", "world3d", "audio", "browser-research", "deploy", "postbridge"],
+  "fallbacks": {"hyperframes": "remotion", "world3d": "scroll-tour", "postbridge": "schedule-manifest"},
+  "required_evidence": ["listing facts", "presenting agent", "license", "disclosure", "Fair Housing", "rights"],
+  "default_deliverables": ["listing-still", "walkthrough", "sales-brief", "teaser", "scroll-tour"]
+}

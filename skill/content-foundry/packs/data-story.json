@@ -1,0 +1,15 @@
+{
+  "name": "data-story",
+  "domain": "data",
+  "description": "Source-grounded visual stories from CSV, spreadsheets, reports, and PDFs.",
+  "default_hook": "Lead with the comparison or change that alters a decision.",
+  "emotional_promise": "Turn raw evidence into a clear, defensible takeaway.",
+  "visual_world": "Data structures translated into spatial, legible evidence.",
+  "lighting": "High-contrast analytic surfaces with restrained depth.",
+  "materials": "Charts, grids, labels, and evidence-linked source textures.",
+  "transition_motif": "Scale, sort, or comparison transformation.",
+  "engines": ["stills", "remotion", "hyperframes", "audio", "browser-research"],
+  "fallbacks": {"hyperframes": "remotion", "remotion": "stills"},
+  "required_evidence": ["dataset", "calculation", "period", "denominator", "source"],
+  "default_deliverables": ["data-hero", "trend-video", "comparison-card", "source-table"]
+}

@@ -1,21 +1,26 @@
-# Engine — HyperFrames (Phase 2 — not yet built)
+# HyperFrames adapter
 
-**Status: stub.** Routed here before Phase 2 lands? Degrade gracefully: offer the Remotion route
-if installed, else a still/carousel from the same brief. Never fail the run because this engine is
-absent.
+Content Foundry's HyperFrames adapter is executable. `engine-plan` creates a zero-local-cost plan;
+`engine-execute` runs `engines/hyperframes/build_composition.mjs`, vendors a local font, creates a
+valid root composition, and records hashes in `receipts/hyperframes.json`.
 
-## What lands here in Phase 2
+The generated project must:
 
-AI-generated video scenes — cinematic/lifestyle content that Remotion's programmatic style can't
-produce:
+- have one standalone root with `data-composition-id`, static `data-duration`, dimensions, and
+  direct-child timed clips;
+- use finite deterministic CSS/WAAPI animation that HyperFrames can seek;
+- use local render-critical dependencies and media;
+- avoid wall clocks, uncontrolled randomness, infinite loops, and network fetches at render;
+- keep clip visibility under HyperFrames control and animate children/wrappers.
 
-- Scene generation via the HyperFrames toolchain; brand palette steering in every scene prompt
-  (steering is an optimization — brand truth still enters via the composite/overlay pass, never
-  via the generation prompt).
-- The same hard rule as stills, applied to motion: **never generate footage depicting a specific
-  real property.** Generated scenes are conceptual/lifestyle only, and the brief must label them
-  as such.
-- Compliance overlay: license + disclosure composited onto rendered video deterministically
-  (same placement rules as `engine-stills.md`), then verified.
-- Credit ceiling: check remaining balance before generating; abort-and-ask rather than silently
-  overspending. Cost-per-asset is logged like every other engine.
+Production loop:
+
+1. build the composition through the adapter and ledger;
+2. run `npx hyperframes check` from the generated project;
+3. inspect snapshots and mounted sub-compositions;
+4. open the Studio preview and obtain final-preview approval;
+5. only then render high quality;
+6. verify file size, duration, codecs, frames, audio, captions, and receipt.
+
+Without HyperFrames CLI, preserve the generated HTML project and route final MP4 through
+Remotion/FFmpeg. State that Studio validation/finishing is unavailable.

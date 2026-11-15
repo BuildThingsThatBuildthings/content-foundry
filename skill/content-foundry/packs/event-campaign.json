@@ -1,0 +1,23 @@
+{
+  "name": "event-campaign",
+  "domain": "event",
+  "description": "Class, workshop, conference, and event acquisition plus nurture.",
+  "default_hook": "Show the transformation before the logistics.",
+  "emotional_promise": "Arrive with a real problem and leave with a usable system.",
+  "visual_world": "An immersive operating world that turns the event curriculum into places, tools, and motion.",
+  "lighting": "Dark architectural space with warm guided pathways and event-brand practicals.",
+  "materials": "Brushed metal, luminous glass, dimensional type, and venue-derived texture.",
+  "transition_motif": "Portal through a real workflow artifact.",
+  "scene_archetypes": [
+    "cinematic portal/world reveal",
+    "presenter and proof split",
+    "kinetic curriculum workflow",
+    "3D learning environment",
+    "benefit demonstration",
+    "logistics and RSVP endcard"
+  ],
+  "engines": ["stills", "remotion", "hyperframes", "world3d", "audio", "browser-research", "deploy", "postbridge"],
+  "fallbacks": {"hyperframes": "remotion", "world3d": "remotion", "postbridge": "schedule-manifest"},
+  "required_evidence": ["event facts", "curriculum claims", "presenters", "venue", "sponsors", "rights"],
+  "default_deliverables": ["30s-hero", "15s-performance", "6s-bumper", "registrant-reminder", "channel-still"]
+}

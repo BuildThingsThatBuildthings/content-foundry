@@ -1,0 +1,15 @@
+{
+  "name": "product-launch",
+  "domain": "product",
+  "description": "Software, service, and product launch assets from repositories, sites, and screenshots.",
+  "default_hook": "Show the product outcome before naming the feature.",
+  "emotional_promise": "Turn product complexity into visible, credible progress.",
+  "visual_world": "The product interface extended into a dimensional brand environment.",
+  "lighting": "Interface-native contrast with focused product highlights.",
+  "materials": "Interface surfaces, glass, code, and product-specific physical metaphor.",
+  "transition_motif": "Interface element expands into the next scene.",
+  "engines": ["stills", "remotion", "hyperframes", "world3d", "audio", "browser-research", "deploy"],
+  "fallbacks": {"hyperframes": "remotion", "world3d": "remotion"},
+  "required_evidence": ["product behavior", "claims", "screenshots", "brand", "rights"],
+  "default_deliverables": ["launch-hero", "feature-cut", "interface-demo", "channel-still"]
+}

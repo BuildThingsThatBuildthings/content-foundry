@@ -1,133 +1,181 @@
 #!/usr/bin/env python3
-"""Content Foundry dependency doctor.
+"""Portable dependency and capability doctor for Content Foundry."""
 
-Run this at setup (SKILL.md setup step 5) and any time something feels broken.
-Checks every dependency by tier, prints per-OS install commands for anything
-missing, and exits non-zero only if a REQUIRED dependency is absent.
+from __future__ import annotations
 
-    python scripts/doctor.py
-
-Tiers:
-  required  — stills pipeline (the core product)
-  video     — Remotion walkthrough/sales-brief/teaser + scroll tour
-  optional  — Post Bridge scheduling
-"""
-
+import argparse
+import importlib.util
+import json
+import os
 import platform
+import re
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 
-OS = platform.system()  # 'Darwin' | 'Linux' | 'Windows'
 
-HINTS = {
-    "ffmpeg": {
-        "Darwin": "brew install ffmpeg",
-        "Linux": "sudo apt install ffmpeg   (or your distro's package manager)",
-        "Windows": "winget install Gyan.FFmpeg   (or download from ffmpeg.org)",
-    },
-    "node": {
-        "Darwin": "brew install node   (or https://nodejs.org — LTS)",
-        "Linux": "https://nodejs.org — LTS (or your distro's nodejs package)",
-        "Windows": "winget install OpenJS.NodeJS.LTS",
-    },
-    "pillow": {
-        "Darwin": "pip3 install Pillow", "Linux": "pip3 install Pillow",
-        "Windows": "pip install Pillow",
-    },
-}
+SKILL = Path(__file__).resolve().parents[1]
 
 
-def hint(name):
-    return HINTS.get(name, {}).get(OS, f"install {name}")
-
-
-def check_cmd(name, args, min_major=None):
-    exe = shutil.which(args[0])
-    if not exe:
-        return False, "not found"
+def command_probe(command: str, args: list[str], minimum: int | None = None) -> dict:
+    executable = shutil.which(command)
+    if not executable:
+        return {"available": False, "detail": "not found"}
     try:
-        out = subprocess.run(args, capture_output=True, text=True, timeout=15)
-        ver = (out.stdout or out.stderr).strip().splitlines()[0]
-    except Exception as e:  # noqa: BLE001 — report anything, this is a doctor
-        return False, f"found but errored: {e}"
-    if min_major is not None:
-        import re
-        m = re.search(r"v?(\d+)\.", ver)
-        if m and int(m.group(1)) < min_major:
-            return False, f"{ver} (need >= {min_major})"
-    return True, ver
+        result = subprocess.run(
+            [executable, *args], capture_output=True, text=True, timeout=15
+        )
+    except Exception as error:
+        return {"available": False, "detail": f"probe failed: {error}"}
+    first = (result.stdout or result.stderr).strip().splitlines()
+    detail = first[0] if first else f"exit {result.returncode}"
+    available = result.returncode == 0
+    if minimum is not None:
+        match = re.search(r"v?(\d+)", detail)
+        if not match or int(match.group(1)) < minimum:
+            available = False
+            detail += f" (requires >= {minimum})"
+    return {"available": available, "detail": detail}
 
 
-def main():
-    results = []  # (tier, name, ok, detail, hint)
+def file_probe(path: Path) -> dict:
+    return {
+        "available": path.exists(),
+        "detail": "ready" if path.exists() else f"missing {path.relative_to(SKILL)}",
+    }
 
-    ok = sys.version_info >= (3, 10)
-    results.append(("required", "python >= 3.10", ok,
-                    platform.python_version(), "install Python 3.10+"))
 
-    try:
-        import PIL
-        results.append(("required", "Pillow", True, PIL.__version__, ""))
-    except ImportError:
-        results.append(("required", "Pillow", False, "not installed",
-                        hint("pillow")))
+def build_report() -> dict:
+    checks = {
+        "python": {
+            "tier": "required",
+            "available": sys.version_info >= (3, 10),
+            "detail": platform.python_version(),
+        },
+        "pillow": {
+            "tier": "required",
+            "available": importlib.util.find_spec("PIL") is not None,
+            "detail": "installed" if importlib.util.find_spec("PIL") else "pip install Pillow",
+        },
+        "fonts": {
+            "tier": "required",
+            **file_probe(SKILL / "assets" / "fonts" / "PlayfairDisplay.ttf"),
+        },
+        "schemas": {
+            "tier": "required",
+            "available": len(list((SKILL / "schemas").glob("*.schema.json"))) >= 5,
+            "detail": f"{len(list((SKILL / 'schemas').glob('*.schema.json')))} schemas",
+        },
+        "openai_host_metadata": {
+            "tier": "required",
+            **file_probe(SKILL / "agents" / "openai.yaml"),
+        },
+        "node22": {"tier": "cinematic", **command_probe("node", ["--version"], 22)},
+        "npm": {"tier": "cinematic", **command_probe("npm", ["--version"])},
+        "ffmpeg": {"tier": "media", **command_probe("ffmpeg", ["-version"])},
+        "ffprobe": {"tier": "media", **command_probe("ffprobe", ["-version"])},
+        "hyperframes_builder": {
+            "tier": "cinematic",
+            **file_probe(SKILL / "engines" / "hyperframes" / "build_composition.mjs"),
+        },
+        "world3d_builder": {
+            "tier": "cinematic",
+            **file_probe(SKILL / "engines" / "world3d" / "build_world.mjs"),
+        },
+        "cinematic_dependencies": {
+            "tier": "cinematic",
+            **file_probe(SKILL / "engines" / "node_modules" / "three" / "build" / "three.module.min.js"),
+        },
+        "remotion_dependencies": {
+            "tier": "cinematic",
+            "available": (SKILL / "engines" / "remotion" / "node_modules").exists(),
+            "detail": (
+                "ready"
+                if (SKILL / "engines" / "remotion" / "node_modules").exists()
+                else "run npm ci in engines/remotion"
+            ),
+        },
+        "openai_provider": {
+            "tier": "optional-provider",
+            "available": bool(os.environ.get("OPENAI_API_KEY")),
+            "detail": "configured" if os.environ.get("OPENAI_API_KEY") else "not configured",
+        },
+        "gemini_provider": {
+            "tier": "optional-provider",
+            "available": bool(os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")),
+            "detail": (
+                "configured"
+                if os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+                else "not configured"
+            ),
+        },
+        "postbridge_provider": {
+            "tier": "optional-provider",
+            "available": bool(
+                os.environ.get("POST_BRIDGE_API_KEY")
+                or os.environ.get("POSTBRIDGE_API_KEY")
+            ),
+            "detail": (
+                "configured"
+                if os.environ.get("POST_BRIDGE_API_KEY")
+                or os.environ.get("POSTBRIDGE_API_KEY")
+                else "not configured"
+            ),
+        },
+    }
+    required_ready = all(
+        item["available"] for item in checks.values() if item["tier"] == "required"
+    )
+    levels = {
+        "core": required_ready,
+        "cinematic_project": required_ready
+        and checks["node22"]["available"]
+        and checks["cinematic_dependencies"]["available"],
+        "remotion_render": required_ready
+        and checks["node22"]["available"]
+        and checks["remotion_dependencies"]["available"]
+        and checks["ffmpeg"]["available"],
+        "media_render": checks["ffmpeg"]["available"] and checks["ffprobe"]["available"],
+        "provider_generation": checks["openai_provider"]["available"]
+        or checks["gemini_provider"]["available"],
+        "scheduling": checks["postbridge_provider"]["available"],
+    }
+    return {
+        "schema_version": "1.0",
+        "platform": {
+            "system": platform.system(),
+            "release": platform.release(),
+            "machine": platform.machine(),
+        },
+        "ok": required_ready,
+        "capability_levels": levels,
+        "checks": checks,
+    }
 
-    fonts = Path(__file__).resolve().parent.parent / "assets" / "fonts"
-    have_fonts = (fonts / "PlayfairDisplay.ttf").exists()
-    results.append(("required", "bundled fonts", have_fonts,
-                    str(fonts) if have_fonts else "missing",
-                    "re-download the skill package — assets/fonts/ is part of it"))
 
-    for tier, name, args, mm in (
-        ("video", "ffmpeg", ["ffmpeg", "-version"], None),
-        ("video", "ffprobe", ["ffprobe", "-version"], None),
-        ("video", "node >= 18", ["node", "--version"], 18),
-        ("video", "npm", ["npm", "--version"], None),
-    ):
-        ok, detail = check_cmd(name, args, mm)
-        results.append((tier, name, ok, detail,
-                        hint(args[0]) if not ok else ""))
-
-    engine = Path(__file__).resolve().parent.parent / "engines" / "remotion"
-    node_modules = (engine / "node_modules").exists()
-    results.append(("video", "remotion engine installed", node_modules,
-                    "ready" if node_modules else "not yet installed",
-                    f"cd {engine} && npm install   (first video use only)"))
-
-    if shutil.which("npx"):
-        r = subprocess.run(["npx", "-y", "postbridge-cli"],
-                           capture_output=True, text=True, timeout=60)
-        ok_pb = "post" in (r.stdout + r.stderr).lower()
-        detail_pb = "available via npx" if ok_pb else "not reachable"
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--json", action="store_true")
+    args = parser.parse_args()
+    report = build_report()
+    if args.json:
+        print(json.dumps(report, indent=2))
     else:
-        ok_pb, detail_pb = False, "needs node/npm"
-    results.append(("optional", "Post Bridge CLI", ok_pb, detail_pb,
-                    "npx postbridge-cli setup --key <your-key>  "
-                    "(post-bridge.com → Settings → API)"))
-
-    print("Content Foundry doctor\n" + "=" * 46)
-    failed_required = False
-    for tier, name, ok, detail, fix in results:
-        mark = "OK " if ok else ("!! " if tier == "required" else "-- ")
-        print(f"{mark}[{tier:8}] {name}: {detail}")
-        if not ok and fix:
-            print(f"            fix: {fix}")
-        if not ok and tier == "required":
-            failed_required = True
-
-    print("=" * 46)
-    if failed_required:
-        print("Result: REQUIRED dependencies missing — stills pipeline will "
-              "not run. Fix the !! lines above.")
-        return 1
-    video_ok = all(ok for t, _, ok, _, _ in results if t == "video")
-    print("Result: core pipeline ready."
-          + (" Video engines ready." if video_ok else
-             " Video engines need the -- items above (stills still work)."))
-    return 0
+        print("Content Foundry doctor")
+        print("=" * 62)
+        for name, item in report["checks"].items():
+            marker = "OK" if item["available"] else "--"
+            print(f"{marker} [{item['tier']}] {name}: {item['detail']}")
+        print("=" * 62)
+        enabled = [
+            name for name, available in report["capability_levels"].items() if available
+        ]
+        print("Ready capability levels: " + ", ".join(enabled))
+        if not report["ok"]:
+            print("Required core checks failed.")
+    return 0 if report["ok"] else 1
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())

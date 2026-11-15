@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contentfoundry.dev/schemas/job.schema.json",
+  "title": "Content Foundry job",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "objective",
+    "conversion_action",
+    "audience",
+    "inputs",
+    "context",
+    "domain",
+    "pack",
+    "deliverables",
+    "channels",
+    "research",
+    "claims_policy",
+    "art_direction",
+    "providers",
+    "budget",
+    "approvals",
+    "distribution"
+  ],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "objective": {"type": "string", "minLength": 1},
+    "conversion_action": {"type": ["string", "null"]},
+    "audience": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["description", "segments"],
+      "properties": {
+        "description": {"type": ["string", "null"]},
+        "segments": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["value"],
+        "properties": {"value": {"type": "string"}}
+      }
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "kind"],
+      "properties": {
+        "path": {"type": ["string", "null"]},
+        "kind": {"type": "string"}
+      }
+    },
+    "domain": {"type": "string"},
+    "pack": {"type": "string"},
+    "deliverables": {"type": "array", "items": {"type": "object"}},
+    "channels": {"type": "array", "items": {"type": "string"}},
+    "research": {"type": "object"},
+    "claims_policy": {"type": "object"},
+    "art_direction": {"type": "object"},
+    "providers": {"type": "object"},
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["currency", "ceiling", "spent"],
+      "properties": {
+        "currency": {"type": "string"},
+        "ceiling": {"type": "number", "minimum": 0},
+        "spent": {"type": "number", "minimum": 0}
+      }
+    },
+    "approvals": {"type": "object"},
+    "distribution": {"type": "object"}
+  }
+}

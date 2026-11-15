@@ -2,8 +2,40 @@ name: CI
 on:
   push: {branches: [main]}
   pull_request:
+
 jobs:
-  smoke:
+  universal-contract:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            skill/content-foundry/engines/package-lock.json
+            skill/content-foundry/engines/remotion/package-lock.json
+      - run: python -m pip install -r skill/content-foundry/requirements.txt
+      - run: npm ci
+        working-directory: skill/content-foundry/engines
+      - run: npm ci
+        working-directory: skill/content-foundry/engines/remotion
+      - run: python -m unittest discover -s tests -v
+      - run: python skill/content-foundry/scripts/doctor.py --json
+      - run: python skill/content-foundry/scripts/self_test.py
+      - run: python scripts/evaluate.py
+      - name: Validate canonical skill
+        run: >-
+          python .ci/quick_validate.py skill/content-foundry
+      - name: Package both host targets
+        run: python scripts/package_release.py --version ci --out dist
+
+  legacy-real-estate-gates:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
@@ -11,22 +43,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: {python-version: '3.12'}
+        with: {python-version: "3.12"}
       - run: pip install -r skill/content-foundry/requirements.txt
-      - name: doctor (informational)
-        run: python skill/content-foundry/scripts/doctor.py || true
-      - name: inventory handles messy drop
+      - name: Inventory handles messy drop
         run: python skill/content-foundry/scripts/inventory.py tests/fixtures/drop-messy --quiet
-      - name: inventory halts on empty drop
+      - name: Inventory halts on empty drop
+        shell: bash
         run: |
-          python skill/content-foundry/scripts/inventory.py tests/fixtures/drop-empty --quiet && exit 1 || echo "correctly halted"
-      - name: demo guard blocks fixtures without the flag
+          if python skill/content-foundry/scripts/inventory.py tests/fixtures/drop-empty --quiet; then
+            exit 1
+          fi
+      - name: Demo guard blocks fixtures without the flag
+        shell: bash
         run: |
-          python skill/content-foundry/scripts/composite.py \
+          if python skill/content-foundry/scripts/composite.py \
             --base tests/fixtures/drop-messy/photo.jpg \
             --agent tests/fixtures/agent-testbrand --channel ig \
-            --headline "Guard Test" --out /tmp/cf-guard.jpg && exit 1 || echo "guard correctly blocked"
-      - name: composite + lint PASS on fixture
+            --headline "Guard Test" --out /tmp/cf-guard.jpg; then
+            exit 1
+          fi
+      - name: Composite and lint pass on fixture
+        shell: bash
         run: |
           python skill/content-foundry/scripts/composite.py \
             --base tests/fixtures/drop-messy/photo.jpg \
@@ -34,18 +71,37 @@ jobs:
             --headline "CI Smoke Test" --out /tmp/cf-ci.jpg
           python skill/content-foundry/scripts/brand_lint.py /tmp/cf-ci.jpg \
             --agent tests/fixtures/agent-testbrand
-      - name: lint FAILS on wrong hex (the gate must be able to fail)
+      - name: Lint fails on wrong hex
+        shell: bash
         run: |
-          mkdir -p /tmp/wronghex && cp -r tests/fixtures/agent-testbrand/. /tmp/wronghex/
+          mkdir -p /tmp/wronghex
+          cp -r tests/fixtures/agent-testbrand/. /tmp/wronghex/
           sed -i.bak 's/#1b4d3e/#7c3aed/' /tmp/wronghex/brand-context-visual.md
-          python skill/content-foundry/scripts/brand_lint.py /tmp/cf-ci.jpg --agent /tmp/wronghex && exit 1 || echo "correctly failed"
-      - name: lint FAILS when disclosure element stripped
+          if python skill/content-foundry/scripts/brand_lint.py /tmp/cf-ci.jpg --agent /tmp/wronghex; then
+            exit 1
+          fi
+      - name: Lint fails when disclosure metadata is stripped
+        shell: bash
         run: |
           python - <<'PY'
           import json
-          m = json.load(open('/tmp/cf-ci.composite.json'))
-          m['elements'] = [e for e in m['elements'] if not (e['type']=='compliance' and e['field']=='disclosure')]
-          json.dump(m, open('/tmp/tampered.json','w'))
+          from pathlib import Path
+
+          source = Path("/tmp/cf-ci.composite.json")
+          target = Path("/tmp/cf-ci-tampered.json")
+          manifest = json.loads(source.read_text())
+          manifest["elements"] = [
+              item
+              for item in manifest["elements"]
+              if not (
+                  item.get("type") == "compliance"
+                  and item.get("field") == "disclosure"
+              )
+          ]
+          target.write_text(json.dumps(manifest))
           PY
-          python skill/content-foundry/scripts/brand_lint.py /tmp/cf-ci.jpg \
-            --agent tests/fixtures/agent-testbrand --manifest /tmp/tampered.json && exit 1 || echo "correctly failed"
+          if python skill/content-foundry/scripts/brand_lint.py /tmp/cf-ci.jpg \
+            --agent tests/fixtures/agent-testbrand \
+            --manifest /tmp/cf-ci-tampered.json; then
+            exit 1
+          fi

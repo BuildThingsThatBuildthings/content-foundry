@@ -1,73 +1,64 @@
-# Content Foundry — Install Guide
+# Install Content Foundry
 
-Written for someone who has never opened a terminal. Total time: about 15 minutes, most of it
-one download.
+Content Foundry is one skill that runs in Claude or OpenAI/Codex.
 
-## What you're installing
+## Automatic install from a checkout
 
-A content engine that runs inside Claude Code. You set up your brand once, then: drop listing
-photos into a folder, say what you want ("new listing announcement"), and get finished,
-branded, compliance-checked posts — sized for Instagram, Facebook, and LinkedIn — plus optional
-video and scheduling.
+```bash
+python scripts/install_skill.py --host claude
+python scripts/install_skill.py --host openai
+```
 
-## Step 1 — Install Claude Code (one time)
+Claude installs at `~/.claude/skills/content-foundry`. OpenAI/Codex installs at
+`~/.agents/skills/content-foundry` (or the corresponding workspace `.agents/skills` root).
+Both copies include `CANONICAL-SHA256`; matching values prove they came from the same source.
 
-1. Go to **claude.com/claude-code** and download the desktop app for your computer
-   (Mac or Windows). Install it like any other app.
-2. Open it and sign in with your Claude account (your brokerage may provide one).
-3. That's it. You will never need to type commands — you talk to it in plain English.
+## Dependencies
 
-## Step 2 — Install Content Foundry (one time)
+Core:
 
-1. Your brokerage gives you a folder (or zip) called `content-foundry`.
-2. Put it here:
-   - **Mac:** `Home → .claude → skills → content-foundry`
-   - If you can't see the `.claude` folder in Finder, press **Cmd+Shift+.** (period) to show
-     hidden folders.
-3. Restart Claude Code. Type `/content-foundry` — if it responds, you're installed.
+```bash
+python skill/content-foundry/scripts/setup.py --tier core
+```
 
-## Step 3 — Set up your brand (one time, ~10 minutes)
+Cinematic project builders, Remotion, and local media:
 
-Say: **"Set up my brand in Content Foundry."**
+```bash
+python skill/content-foundry/scripts/setup.py --tier cinematic
+```
 
-It will interview you — your name, your market, how you sound, your colors, your logo file,
-and your brokerage's required license/disclosure wording. Have these handy:
+HyperFrames needs Node 22+. FFmpeg/ffprobe are needed for final media. Provider credentials are
+optional and must be configured through the host’s secure secret flow.
 
-- Your logo (a PNG file is ideal; a brand-guide PDF also works)
-- Your license number
-- The exact disclosure line your brokerage requires (ask your broker — Content Foundry will
-  not write legal wording for you)
+Verify the install:
 
-Everything is saved in one folder with your name on it. You never re-explain your brand.
+```bash
+python skill/content-foundry/scripts/doctor.py --json
+python skill/content-foundry/scripts/self_test.py
+```
 
-## Step 4 — Make your first post (~5 minutes)
+## Migrate an existing real-estate agent folder
 
-1. Make a folder anywhere (Desktop is fine). Drop in your listing photos — and anything else:
-   the MLS sheet PDF, a walkthrough video, a link in a text file. Messy is fine.
-2. Say: **"New listing announcement from the folder on my Desktop."**
-3. It shows you a short brief first — the plan for the post. Say "go" or ask for changes.
-4. Finished, branded, sized images land in an `output` folder. Every one carries your logo,
-   your exact colors, your license line, and your brokerage's disclosure — checked by software,
-   not by memory.
+```bash
+python skill/content-foundry/scripts/migrate_context.py \
+  ./agents/example \
+  ./contexts/example
+```
 
-## What can go wrong (and what it means)
+The migration copies files, hashes them, writes `context.json`, and requires review of identity,
+rights, logos, colors, fonts, claims, and compliance before public production.
 
-| It says | It means |
-|---|---|
-| "brand file is still a blank template" | Step 3 isn't finished — run the setup interview |
-| "logo path does not resolve" | The logo file moved — put it back in your brand folder |
-| "compliance strings not filled" | Your brokerage's disclosure wording is missing — it will never invent it |
-| "headline does not fit" | Your headline is too long for the format — it will ask for shorter copy instead of shrinking text into illegibility |
+## First successful run
 
-## Video and scheduling (optional)
+```bash
+python skill/content-foundry/scripts/foundry.py prepare \
+  --input "text:A fictional product that helps teams verify creative work." \
+  --goal "Create a product-launch campaign" \
+  --pack product-launch \
+  --run-dir ./runs/first-run
 
-- **Video** needs one extra install the first time — Content Foundry will walk you through it
-  when you first ask for a video (under the hood: `cd engines/remotion && npm install`, about a
-  minute). If you skip it, you still get image versions of everything.
-- **Scheduling** connects to Post Bridge (post-bridge.com). Everything is created as a **draft
-  you approve** — nothing ever publishes by itself.
+python skill/content-foundry/scripts/foundry.py plan --run-dir ./runs/first-run
+```
 
-## Support
-
-Contact your brokerage's Content Foundry administrator. This tool assists with compliance
-placement; your brokerage owns the wording. It is not legal advice.
+The run stops at its research/brief approval gate by design. Review `BRIEF.md`,
+`claims-ledger.json`, `creative-system.json`, and `route-plan.json` before any generation spend.

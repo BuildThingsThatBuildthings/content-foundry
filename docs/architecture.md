@@ -1,87 +1,64 @@
-# Content Foundry — Architecture
+# Content Foundry architecture
 
-## Design philosophy
+## One canonical skill, two hosts
 
-Three constraints drive every decision:
+`skill/content-foundry/` is the source of truth. Claude and OpenAI/Codex launchers stay thin and
+operate the same Python runtime, schemas, packs, references, engines, fixtures, and quality gates.
+`scripts/install_skill.py` installs the canonical tree to either host and records its content hash.
 
-1. **It's a skill, not an app.** No server, no database, no UI. The entire product is a folder;
-   Claude Code is the runtime. Distribution is a copy; support burden stays near zero.
-2. **Foundation once, content forever.** An agent's brand is captured one time into a Context Kit
-   folder. Every run reads that folder. One folder per agent is the tenancy boundary — a
-   brokerage with 40 agents has 40 folders, and nothing outside the selected folder can
-   influence a run.
-3. **Deterministic where possible, generative where necessary.** File inventory, brand
-   compositing, brand linting, export sizing, and naming are scripts. Creative decisions are the
-   model's job. **Never let the model do what a script can verify.**
+## Layering
 
-Constraint 3 is load-bearing: asking a generative model to "include the logo and use `#676147`"
-is exactly the failure this product prevents. So it is never asked.
+1. **Universal core:** ingest, unify, research, brief, creative system, route, generate, composite,
+   QC, export, deploy/schedule.
+2. **Domain packs:** general social, events/classes, real estate, product launch, education, data
+   story.
+3. **Engine adapters:** still/provider generation, deterministic composite, Remotion, HyperFrames,
+   Three.js, audio, browser research, deployment, scheduling.
+4. **Host adapters:** Claude and OpenAI/Codex interpretation, media understanding, research, and
+   approval conversation.
 
-## The agent folder (tenancy unit)
+Portable context folders represent a person, company, product, event, property, or client.
+`agents/{slug}` remains backward compatible.
 
-```
-agents/{slug}/
-├── _MANIFEST.md                  # load order; Tier 1 overrides Tier 2
-├── about-me.md                   # Tier 1 — identity
-├── brand-voice.md                # Tier 1 — voice rules, banned words, examples
-├── working-style.md              # Tier 1 — collaboration defaults
-├── brand-context-visual.md       # Tier 2 — hexes, logo paths, fonts, photo style
-├── brand-context-compliance.md   # Tier 2 — license, disclosure, Fair Housing, bans
-└── assets/logo-*.png
-```
+## Contracts
 
-`scripts/brandkit.py` is the single reader — `composite.py` and `brand_lint.py` both consume it,
-so the linter always validates the same truth the compositor used. Blank-template detection stops
-a half-configured agent from producing assets.
+- `job.json` describes outcome, conversion action, audience, sources, context, pack, deliverables,
+  channels, research, claims, art direction, providers, budget, approvals, and distribution.
+- `asset-manifest.json` stores hash, type, provenance, rights, dimensions/duration, extraction,
+  transcript, role, duplicates, and unsupported preservation.
+- `creative-system.json` stores strategy, art direction, scene/camera/motion/audio/CTA systems, and
+  at least three structurally distinct directions.
+- `run.json` stores ten stages, per-engine substeps, attempts, failures, receipts, costs,
+  deployments, and scheduling readback.
+- Every adapter implements `probe`, `plan`, `execute`, `verify`, `artifacts`, and `receipt`.
 
-## The pipeline
+All paths inside stage state and receipts are run-relative so the run can move between machines.
 
-| Stage | What | Deterministic? |
-|---|---|---|
-| 1 INGEST | `inventory.py`: walk the drop, hash, dims, duplicates, unsupported-but-not-fatal | ✅ |
-| 2 UNIFY | transcribe / extract / fetch / describe → one canonical context doc | model-assisted |
-| 3 RESEARCH | scoped web search; every stat needs a citation | model |
-| 4 BRIEF ✋ | creative brief written to disk **before** any generation spend; user reviews | model |
-| 5 ROUTE | brief → engine (stills / walkthrough / sales-brief / teaser / scroll tour) | table |
-| 6 GENERATE | base imagery only — no logo, no text, no disclosure in generated pixels | model/BYO |
-| 7 COMPOSITE ⚙ | `composite.py`: logo bytes, exact hexes, headline type, compliance block at channel-spec coordinates; WCAG-AA worst-case contrast with scrim → panel → backing-strip escalation | ✅ |
-| 8 QC GATE | `brand_lint.py` (pixels + manifest) AND model QC vs slop taxonomy; max 2 retries, then plain-language surface | ✅ + model |
-| 9 EXPORT | channel sizing, naming convention, manifest | ✅ |
-| 10 PUBLISH | Post Bridge drafts only; explicit `auto_publish: true` required to ever change that | ✅ |
+## Approval and mutation boundary
 
-### Why the lint is trustworthy
+Stage 4 produces the complete brief and route before generation. Approval hashes all governing
+artifacts. Engine plan/execution/check refuses stale approval. A passed automated check still
+requires visual/watch-through review and final-preview approval before rendering. Deployment and
+scheduled drafts are separate explicit mutations with external readback.
 
-`brand_lint.py` does not trust the compositor's claims. It re-reads the brand folder, then
-verifies pixels: logo sampled against its source bytes, exact hexes probed on solid elements,
-compliance strings matched verbatim, worst-case (not average) contrast measured behind text, safe
-zones enforced. CI runs negative tests — a wrong hex and a stripped disclosure **must** fail —
-so the gate can never silently rot into a formality.
+## Deterministic and generative boundary
 
-### Contrast is measured worst-case
+Generative engines may create visual worlds, imagery, narration, and exploratory footage.
+Deterministic engines place exact logos, brand values, type, claims, citations, disclosures,
+sponsor marks, captions, safe zones, and CTAs. Provider calls cannot bypass the ledger.
 
-Averages hide local failure. Text contrast is sampled at the ~p85 worst pixel of the exact box
-the text occupies; if a gradient scrim can't clear 4.5:1, the compositor escalates to a solid
-brand panel, and the compliance block gets its own backing strip. "Almost legible" legal text is
-a failure by definition.
+HyperFrames and Three.js are real project adapters. HyperFrames generates an offline seekable
+composition and can attach browser-check evidence. The Three.js builder vendors pinned MIT modules
+and renders only from `hf-seek`; no wall clock, render-time network, or private repository.
 
-## Video engines
+## Quality gate
 
-- **Remotion** (`engines/remotion/`): three comps — narrated Walkthrough, SalesBrief, Teaser —
-  driven entirely by a props file from `video_props.py` (brand tokens via brandkit; measured VO
-  durations drive scene timing; photos carry real aspect ratios so landscape images are fitted
-  into editorial bands, never blind-cropped). Bundled OFL display font loaded via FontFace for
-  identical renders on every OS. [Pretext](https://www.pretext.cool/) computes deterministic
-  headline line breaks.
-- **Scroll Tour** (`engines/scroll-tour/`): the vendored
-  [scroll-world](https://github.com/oso95/scroll-world) scrub engine (MIT) plus
-  `build_tour.py` — ffmpeg camera flights generated from the listing's real photos (2×
-  supersampled zoompan; zero AI generation), doorway-portal connectors that dive into each
-  room's declared focal point with frame-identical seams, staggered scroll-driven info reveals,
-  brand theming, compliance footer.
+Export blocks on applicable factual, rights, brand, compliance, hierarchy, slop, distinctness,
+hook, accessibility, safe-zone, contrast, duration, codec, loudness, missing-media, hash, and human
+review failures. Each root cause gets at most two retries before a plain-language stop.
 
-## Degradation rules
+## Open-source boundary
 
-Missing optional dependency → fall back, never fail: no Remotion → stills from the same brief +
-install offer; no narration → music-only → silent (each warned in the props); no Post Bridge →
-exports remain on disk. The one thing that never degrades: compliance placement. An unfilled
-disclosure blocks production output entirely.
+The public package contains no private paths, brands, people, keys, or repository assumptions.
+Private engines may plug into the same adapter interface, but declared open fallbacks remain
+functional. Public evaluation fixtures are fictional and rights-clean.

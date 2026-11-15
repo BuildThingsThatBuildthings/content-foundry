@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contentfoundry.dev/schemas/engine-receipt.schema.json",
+  "title": "Content Foundry engine receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "engine", "created_at", "status", "provider", "cost", "artifacts", "verification", "warnings"],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "engine": {"type": "string"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "status": {"enum": ["verified", "failed", "blocked"]},
+    "provider": {"type": "string"},
+    "model_or_version": {"type": ["string", "null"]},
+    "cost": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["currency", "amount"],
+      "properties": {
+        "currency": {"type": "string"},
+        "amount": {"type": "number", "minimum": 0}
+      }
+    },
+    "artifacts": {"type": "array", "items": {"type": "object"}},
+    "verification": {"type": "object"},
+    "command": {"type": ["array", "string", "null"]},
+    "warnings": {"type": "array", "items": {"type": "string"}}
+  }
+}

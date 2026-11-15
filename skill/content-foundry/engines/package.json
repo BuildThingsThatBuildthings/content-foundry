@@ -1,0 +1,13 @@
+{
+  "name": "@content-foundry/local-engines",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Pinned deterministic browser runtimes used by the portable Content Foundry engines.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "three": "0.181.2"
+  }
+}

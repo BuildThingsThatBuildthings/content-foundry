@@ -1,0 +1,15 @@
+{
+  "name": "education",
+  "domain": "education",
+  "description": "Explainers, lessons, curricula, and educational campaigns.",
+  "default_hook": "Name the misconception or costly gap the lesson resolves.",
+  "emotional_promise": "Make a difficult idea feel graspable and usable.",
+  "visual_world": "A visual learning system built from the subject's real structure.",
+  "lighting": "Clear, high-comprehension editorial lighting.",
+  "materials": "Diagrammatic surfaces, physical metaphors, and source imagery.",
+  "transition_motif": "Cause-and-effect transformation.",
+  "engines": ["stills", "remotion", "hyperframes", "world3d", "audio", "browser-research"],
+  "fallbacks": {"hyperframes": "remotion", "world3d": "remotion"},
+  "required_evidence": ["source curriculum", "claims", "citations", "rights"],
+  "default_deliverables": ["explainer", "lesson-cut", "diagram", "channel-still"]
+}

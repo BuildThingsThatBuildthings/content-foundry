@@ -50,6 +50,7 @@ TYPE_MAP = {
 
 SKIP_NAMES = {".DS_Store", "Thumbs.db", "desktop.ini", ".gitkeep"}
 SKIP_DIRS = {"__MACOSX", ".git", "node_modules", ".venv"}
+BLOCKED_AUDIO_POLICY = Path(__file__).resolve().parents[1] / "assets" / "audio-denylist.json"
 
 
 def sha256(path, chunk=1 << 20):
@@ -58,6 +59,19 @@ def sha256(path, chunk=1 << 20):
         while block := f.read(chunk):
             h.update(block)
     return h.hexdigest()
+
+
+def blocked_audio_fingerprints():
+    if not BLOCKED_AUDIO_POLICY.exists():
+        return {}
+    try:
+        payload = json.loads(BLOCKED_AUDIO_POLICY.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"invalid blocked-audio policy: {BLOCKED_AUDIO_POLICY}: {exc}") from exc
+    blocked = payload.get("blocked_sha256", {})
+    if not isinstance(blocked, dict):
+        raise RuntimeError("invalid blocked-audio policy: blocked_sha256 must be an object")
+    return blocked
 
 
 def image_dims(path):
@@ -118,6 +132,19 @@ def scan(drop_path):
                                     "reason": "unrecognized extension"})
                 continue
             category, handler = TYPE_MAP[ext]
+            digest = sha256(p)
+            if category == "audio" and digest in blocked_audio_fingerprints():
+                unsupported.append({
+                    "path": rel,
+                    "ext": ext,
+                    "size_bytes": st.st_size,
+                    "sha256": digest,
+                    "reason": "blocked audio fingerprint",
+                    "policy": blocked_audio_fingerprints()[digest],
+                    "preserved": False,
+                    "status": "blocked",
+                })
+                continue
             rec = {
                 "path": rel,
                 "abs_path": str(p.resolve()),
@@ -127,7 +154,7 @@ def scan(drop_path):
                 "ext": ext,
                 "size_bytes": st.st_size,
                 "modified": datetime.fromtimestamp(st.st_mtime, timezone.utc).isoformat(),
-                "sha256": sha256(p),
+                "sha256": digest,
             }
             if category == "image":
                 dims = image_dims(p)

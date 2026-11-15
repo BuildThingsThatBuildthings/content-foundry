@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contentfoundry.dev/schemas/asset-manifest.schema.json",
+  "title": "Content Foundry asset manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "generated_at", "assets", "unsupported", "duplicates", "summary"],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "path",
+          "source",
+          "category",
+          "provenance",
+          "rights",
+          "intended_role",
+          "dimensions",
+          "duration_seconds",
+          "extraction",
+          "transcript"
+        ],
+        "properties": {
+          "id": {"type": "string"},
+          "path": {"type": "string"},
+          "source": {"type": "string"},
+          "category": {"type": "string"},
+          "sha256": {"type": "string"},
+          "dimensions": {"type": ["object", "null"]},
+          "duration_seconds": {"type": ["number", "null"]},
+          "transcript": {
+            "type": "object",
+            "required": ["status", "method", "artifact"],
+            "properties": {
+              "status": {"type": "string"},
+              "method": {"type": ["string", "null"]},
+              "artifact": {"type": ["string", "null"]}
+            },
+            "additionalProperties": false
+          },
+          "extraction": {
+            "type": "object",
+            "required": ["status", "method", "artifact"],
+            "properties": {
+              "status": {"type": "string"},
+              "method": {"type": ["string", "null"]},
+              "artifact": {"type": ["string", "null"]}
+            },
+            "additionalProperties": false
+          },
+          "intended_role": {"type": "string"},
+          "provenance": {"type": "object"},
+          "rights": {"type": "object"}
+        },
+        "additionalProperties": true
+      }
+    },
+    "unsupported": {"type": "array", "items": {"type": "object"}},
+    "duplicates": {"type": "array", "items": {"type": "object"}},
+    "summary": {"type": "object"}
+  }
+}
