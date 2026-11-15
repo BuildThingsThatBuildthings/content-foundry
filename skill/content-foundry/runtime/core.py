@@ -79,6 +79,8 @@ SUPPORTED_EXTENSIONS = {
     ".yaml": ("data", "extract"),
     ".yml": ("data", "extract"),
 }
+ASSET_POLICY_ROOT = Path(__file__).resolve().parents[1] / "assets"
+BLOCKED_AUDIO_POLICY = ASSET_POLICY_ROOT / "audio-denylist.json"
 
 
 class FoundryError(RuntimeError):
@@ -99,6 +101,20 @@ def sha256_file(path: Path, chunk_size: int = 1 << 20) -> str:
 
 def sha256_text(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def blocked_audio_fingerprints() -> dict[str, dict[str, str]]:
+    """Return globally rejected audio hashes from the portable skill policy."""
+    if not BLOCKED_AUDIO_POLICY.exists():
+        return {}
+    try:
+        payload = json.loads(BLOCKED_AUDIO_POLICY.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        raise FoundryError(f"invalid blocked-audio policy: {BLOCKED_AUDIO_POLICY}: {exc}") from exc
+    blocked = payload.get("blocked_sha256", {})
+    if not isinstance(blocked, dict):
+        raise FoundryError(f"invalid blocked-audio policy: blocked_sha256 must be an object")
+    return blocked
 
 
 def slugify(value: str) -> str:
@@ -148,15 +164,24 @@ def _file_record(
 ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
     stat = source.stat()
     extension = source.suffix.lower()
-    staged = _copy_to_cache(source, cache_root / f"input-{input_index:02d}", rel)
+    digest = sha256_file(source)
+    category_and_handler = SUPPORTED_EXTENSIONS.get(extension)
+    is_blocked_audio = bool(
+        category_and_handler
+        and category_and_handler[0] == "audio"
+        and digest in blocked_audio_fingerprints()
+    )
+    staged = None if is_blocked_audio else _copy_to_cache(
+        source, cache_root / f"input-{input_index:02d}", rel
+    )
     base = {
-        "id": f"asset-{sha256_file(source)[:16]}",
+        "id": f"asset-{digest[:16]}",
         "path": rel.as_posix(),
         "source": str(source.resolve()),
-        "staged_path": str(staged.resolve()),
+        "staged_path": str(staged.resolve()) if staged else None,
         "extension": extension or "(none)",
         "size_bytes": stat.st_size,
-        "sha256": sha256_file(source),
+        "sha256": digest,
         "modified_at": datetime.fromtimestamp(stat.st_mtime, timezone.utc).isoformat(),
         "mime_type": mimetypes.guess_type(source.name)[0] or "application/octet-stream",
         "provenance": {
@@ -192,6 +217,15 @@ def _file_record(
             "preserved": True,
         }
         return None, unsupported
+    if is_blocked_audio:
+        policy = blocked_audio_fingerprints()[digest]
+        return None, {
+            **base,
+            "reason": "blocked audio fingerprint",
+            "policy": policy,
+            "preserved": False,
+            "status": "blocked",
+        }
     category, handler = SUPPORTED_EXTENSIONS[extension]
     transcript_status = "pending" if handler == "transcribe" else "not_applicable"
     return {

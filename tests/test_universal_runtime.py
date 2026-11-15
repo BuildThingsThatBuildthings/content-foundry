@@ -124,6 +124,38 @@ class UniversalRuntimeTests(unittest.TestCase):
             self.assertIn("extraction", code)
             self.assertIn("transcript", code)
 
+    def test_rejected_audio_hash_is_blocked_before_staging(self):
+        sys.path.insert(0, str(ROOT / "skill" / "content-foundry"))
+        from runtime import core
+
+        with tempfile.TemporaryDirectory() as td:
+            temp = Path(td)
+            rejected_audio = temp / "rejected.mp3"
+            rejected_audio.write_bytes(b"brand rejected soundtrack fixture")
+            digest = core.sha256_file(rejected_audio)
+            policy = temp / "audio-denylist.json"
+            policy.write_text(json.dumps({
+                "schema_version": "1.0",
+                "blocked_sha256": {
+                    digest: {"reason": "test rejection", "scope": "global"}
+                },
+            }))
+            original_policy = core.BLOCKED_AUDIO_POLICY
+            core.BLOCKED_AUDIO_POLICY = policy
+            try:
+                manifest = core.inventory_inputs([str(rejected_audio)], temp / "run")
+            finally:
+                core.BLOCKED_AUDIO_POLICY = original_policy
+
+            self.assertEqual(manifest["assets"], [])
+            self.assertEqual(len(manifest["unsupported"]), 1)
+            blocked = manifest["unsupported"][0]
+            self.assertEqual(blocked["status"], "blocked")
+            self.assertEqual(blocked["reason"], "blocked audio fingerprint")
+            self.assertIsNone(blocked["staged_path"])
+            self.assertFalse(blocked["preserved"])
+            self.assertFalse(any((temp / "run" / "inputs").rglob("*.mp3")))
+
     def test_empty_or_entirely_unusable_input_is_preserved_and_blocks_cleanly(self):
         with tempfile.TemporaryDirectory() as td:
             temp = Path(td)
